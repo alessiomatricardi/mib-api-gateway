@@ -1,0 +1,10 @@
+#
+# API Gateway configuration
+#
+
+# Flask settings
+FLASK_ENV=production
+APP_SECRET=2929383DmdosfSlsDKfkSl2304ssdfpgmfls302k
+
+# Microservices
+USERS_MS_PORT=5000
