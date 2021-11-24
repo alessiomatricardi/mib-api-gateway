@@ -3,9 +3,8 @@ from flask import Blueprint, render_template
 home = Blueprint('home', __name__)
 
 
-@home.route('/', methods=['GET', 'POST'])
-def index():
-    """General route for the index page
-    """
+@home.route('/', methods=['GET'])
+def _index():
+    # render the homepage
     return render_template("index.html")
 

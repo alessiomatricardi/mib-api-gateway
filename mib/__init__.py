@@ -36,6 +36,9 @@ def create_app():
     env = Environments(app)
     env.from_object(config_object)
 
+    # This allows us to test forms without WTForm token
+    app.config['WTF_CSRF_ENABLED'] = False
+
     register_extensions(app)
     register_blueprints(app)
     register_handlers(app)
@@ -97,7 +100,12 @@ def register_handlers(app):
     :param app: application object
     :return: None
     """
-    from .handlers import page_404, error_500
+    from . import handlers
 
-    app.register_error_handler(404, page_404)
-    app.register_error_handler(500, error_500)
+    app.register_error_handler(400, handlers.bad_request)
+    app.register_error_handler(401, handlers.unauthorized)
+    app.register_error_handler(403, handlers.forbidden)
+    app.register_error_handler(404, handlers.page_not_found)
+    app.register_error_handler(405, handlers.method_not_allowed)
+    app.register_error_handler(409, handlers.conflict)
+    app.register_error_handler(500, handlers.internal_server)
