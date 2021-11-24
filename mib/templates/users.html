@@ -1,17 +1,28 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
-{% block title %} Users {% endblock %}
+{% block title %}Users{% endblock %}
 
 {% block content %}
-    <h1>User List</h1>
-    <ul>
-        {% for user in users%}
-            <li>
-                {{ user.firstname }} {{ user.lastname }}
-            </li>
-        {% endfor %}
-    </ul>
-{% endblock %}
 
-{% block footer %}
+<h1>Users</h1>
+
+{% for user in users: %}
+
+  <div class="card mb-3" style="max-width: 540px;">
+    <div class="row g-0">
+      <div class="col-md-3" style="text-align: center;">
+        <img src="/users/{{user.id}}/picture?dim=small" class="img-fluid rounded-circle img-thumbnail" alt="{{user.email}}">
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <h5 class="card-title">{{user.firstname}} {{user.lastname}} ({{user.email}})</h5>
+          <a href="/users/{{ user.id }}" class="btn btn-success">See profile</a>
+          <a href="/messages/new?single_recipient={{user.email}}" class="btn btn-primary">Write to</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endfor %}
+
 {% endblock %}
