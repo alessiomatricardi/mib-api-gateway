@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block add_head %}
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link href='https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.css' rel='stylesheet' />
+<link href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.13.1/css/all.css' rel='stylesheet'>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+{% endblock %}
+
+{% block content %}
+
+<h1>Calendar</h1>
+
+<div class="container my-3" style="padding-bottom: 100px;">
+    <div id="calendar"></div>
+</div>
+
+<script src="https://unpkg.com/jquery@3.4.1/dist/jquery.min.js"></script>
+<script src="https://unpkg.com/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://unpkg.com/bootstrap@4.5.0/dist/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales-all.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales-all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.js"></script>
+<script src="https://rawgit.com/moment/moment/2.2.1/min/moment.min.js"></script>
+<script type="text/javascript">
+    var messages = {{ messages|safe }}
+
+    var events = []
+    for(message of messages){
+        console.log(message)
+        events.push({
+            title: message[0],
+            start: message[1],
+            backgroundColor: message[2] ? '#00b7ff' : '#ff6000'
+        })
+    }
+
+    const element = document.getElementById("calendar");
+
+    var todayDate = moment().startOf("day");
+    var YM = todayDate.format("YYYY-MM");
+    var YESTERDAY = todayDate.clone().subtract(1, "day").format("YYYY-MM-DD");
+    var TODAY = todayDate.format("YYYY-MM-DD");
+    var TOMORROW = todayDate.clone().add(1, "day").format("YYYY-MM-DD");
+
+    var calendarEl = document.getElementById("calendar");
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,listYear"
+        },
+
+        height: 800,
+        contentHeight: 780,
+        aspectRatio: 3,  // see: https://fullcalendar.io/docs/aspectRatio
+
+        nowIndicator: true,
+        now: TODAY, // just for demo
+
+        
+        views: {
+            dayGridMonth: { buttonText: "month" },
+            timeGridWeek: { buttonText: "week" },
+            timeGridDay: { buttonText: "day" }
+        }, 
+
+        initialView: "dayGridMonth",
+        initialDate: TODAY,
+
+        dayMaxEvents: true, // allow "more" link when too many events
+        navLinks: true,
+        events: events,
+
+    });
+
+    calendar.render();
+</script>
+
+{% endblock %}
