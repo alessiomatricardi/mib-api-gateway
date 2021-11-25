@@ -154,7 +154,7 @@ class TestUserManager(RaoTest):
             }
         )
         password = TestUserManager.faker.password()
-        response = self.user_manager.authenticate_user(
+        response = self.user_manager.login_user(
             email=user.email, password=password
         )
         assert response is not None
@@ -165,7 +165,7 @@ class TestUserManager(RaoTest):
         mock_post.return_value = Mock(status_code=400, json=lambda : {'message': 0})
         with self.app.test_request_context ():
             with self.assertRaises(HTTPException) as http_error:
-                self.user_manager.authenticate_user(
+                self.user_manager.login_user(
                     self.faker.email(),
                     self.faker.password()
                 )
