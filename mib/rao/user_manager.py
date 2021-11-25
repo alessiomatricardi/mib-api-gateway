@@ -150,7 +150,7 @@ class UserManager:
         return response
 
     @classmethod
-    def authenticate_user(cls, email: str, password: str) -> User:
+    def login_user(cls, email: str, password: str) -> User:
         """
         This method authenticates the user trough users AP
         :param email: user email
@@ -160,7 +160,7 @@ class UserManager:
         payload = dict(email=email, password=password)
         try:
             print('trying response....')
-            response = requests.post('%s/authenticate' % cls.USERS_ENDPOINT,
+            response = requests.post('%s/login' % cls.USERS_ENDPOINT,
                                      json=payload,
                                      timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                      )

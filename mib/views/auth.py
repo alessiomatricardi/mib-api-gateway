@@ -19,7 +19,7 @@ def _login():
 
         if form.validate_on_submit():
             email, password = form.data['email'], form.data['password']
-            user = UserManager.authenticate_user(email, password)
+            user = UserManager.login_user(email, password)
 
             # the user doesn't exists
             if user is None:
