@@ -58,7 +58,8 @@ def create_user():
 @users.route('/delete_user/<int:id>', methods=['GET', 'POST'])
 @login_required
 def delete_user(id):
-    """Deletes the data of the user from the database.
+    """
+    Deletes the data of the user from the database.
 
     Args:
         id_ (int): takes the unique id as a parameter

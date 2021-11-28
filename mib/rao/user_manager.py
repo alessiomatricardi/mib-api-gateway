@@ -150,7 +150,7 @@ class UserManager:
         return response
 
     @classmethod
-    def login_user(cls, email: str, password: str) -> User:
+    def login_user(cls, email: str, password: str) -> tuple[User, int]:
         """
         This method authenticates the user trough users AP
         :param email: user email
@@ -169,13 +169,15 @@ class UserManager:
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             # We can't connect to Users MS
             return abort(500)
+        
+        status_code = response.status_code
 
-        if response.status_code == 401:
-            # user is not authenticated
-            return None
-        elif response.status_code == 200:
+        # user doesn't exist or is not authenticated
+        if status_code in [401, 404]:
+            return None, status_code
+        elif status_code == 200:
             user = User.build_from_json(json_response['user'])
-            return user
+            return user, status_code
         else:
             raise RuntimeError(
                 'Microservice users returned an invalid status code %s, and message %s'

@@ -9,15 +9,23 @@ class User(UserMixin):
     """
     id = None
     email = None
+    firstname = None
+    lastname = None
+    date_of_birth = None
+    lottery_points = None
+    has_picture = None
+    content_filter_enabled = None
     is_active = None
-    is_admin = None
     authenticated = None
     is_anonymous = False
     extra_data = None
 
+    # A list of fields to be serialized TODO CONTROLLARE
+    SERIALIZE_LIST = ['id', 'email', 'is_active', 'is_anonymous','firstname','lastname','date_of_birth','lottery_points','has_picture','content_filter_enabled']
+
     @staticmethod
     def build_from_json(json: dict):
-        kw = {key: json[key] for key in ['id', 'email', 'is_active', 'is_anonymous']}
+        kw = {key: json[key] for key in User.SERIALIZE_LIST}
         extra = json.copy()
         all(map(extra.pop, kw))
         kw['extra'] = extra

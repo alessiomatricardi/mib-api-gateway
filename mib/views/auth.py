@@ -19,42 +19,27 @@ def _login():
 
         if form.validate_on_submit():
             email, password = form.data['email'], form.data['password']
-            user = UserManager.login_user(email, password)
+            user, status_code = UserManager.login_user(email, password)
 
-            # the user doesn't exists
             if user is None:
-                # this add an error message that will be printed on screen
-                form.email.errors.append(
-                    "Account " + email + " does not exist."
-                )
+                # the user doesn't exists
+                if status_code == 404:
+                    # this add an error message that will be printed on screen
+                    form.email.errors.append(
+                        "Account " + email + " does not exist."
+                    )
+                elif status_code == 401:
+                    # password is wrong or the user unregistered his profile
+                    # this add an error message that will be printed on screen
+                    form.password.errors.append(
+                        "Password is wrong or this account is no longer active"
+                    )
                 return render_template('login.html', form=form)
             
             # login the user
             login_user(user)
             return redirect('/')
 
-            # TODO handle when the user is no more active
-            
-            authenticated = user.authenticate(password)
-
-            if user.is_active and authenticated:
-                # login the user
-                login_user(user)
-                return redirect('/')
-            elif not user.is_active:
-                # the user unregistered his profile
-                # this add an error message that will be printed on screen
-                form.email.errors.append(
-                    "This account is no longer active."
-                )
-            else:
-                # wrong password
-                # this add an error message that will be printed on screen
-                form.password.errors.append(
-                    "Password is wrong."
-                )
-    
-        return render_template('login.html', form=form)
     else:
         return render_template('login.html', form=form)
 
