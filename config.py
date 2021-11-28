@@ -26,29 +26,23 @@ class Config(object):
     USERS_MS_PORT = os.getenv('USERS_MS_PORT', 5001)
     USERS_MS_URL = '%s://%s:%s' % (USERS_MS_PROTO, USERS_MS_HOST, USERS_MS_PORT)
 
-    # restaurants
-    RESTAURANTS_MS_PROTO = os.getenv('RESTAURANTS_MS_PROTO', 'http')
-    RESTAURANTS_MS_HOST = os.getenv('RESTAURANTS_MS_HOST', 'localhost')
-    RESTAURANTS_MS_PORT = os.getenv('RESTAURANTS_MS_PORT', 5002)
-    RESTAURANTS_MS_URL = '%s://%s:%s' % (RESTAURANTS_MS_PROTO, RESTAURANTS_MS_HOST, RESTAURANTS_MS_PORT)
+    # blacklist microservice
+    BLACKLIST_MS_PROTO = os.getenv('BLACKLIST_MS_PROTO', 'http')
+    BLACKLIST_MS_HOST = os.getenv('BLACKLIST_MS_HOST', 'localhost')
+    BLACKLIST_MS_PORT = os.getenv('BLACKLIST_MS_PORT', 5002)
+    BLACKLIST_MS_URL = '%s://%s:%s' % (BLACKLIST_MS_PROTO, BLACKLIST_MS_HOST, BLACKLIST_MS_PORT)
 
-    # reservation
-    RESERVATIONS_MS_PROTO = os.getenv('RESERVATIONS_MS_PROTO', 'http')
-    RESERVATIONS_MS_HOST = os.getenv('RESERVATIONS_MS_HOST', 'localhost')
-    RESERVATIONS_MS_PORT = os.getenv('RESERVATIONS_MS_PORT', 5003)
-    RESERVATIONS_MS_URL = '%s://%s:%s' % (RESERVATIONS_MS_PROTO, RESERVATIONS_MS_HOST, RESERVATIONS_MS_PORT)
-
-    # notifications
-    NOTIFICATIONS_MS_PROTO = os.getenv('NOTIFICATIONS_MS_PROTO', 'http')
-    NOTIFICATIONS_MS_HOST = os.getenv('NOTIFICATIONS_MS_HOST', 'localhost')
-    NOTIFICATIONS_MS_PORT = os.getenv('NOTIFICATIONS_MS_PORT', 5004)
-    NOTIFICATIONS_MS_URL = '%s://%s:%s' % (NOTIFICATIONS_MS_PROTO, NOTIFICATIONS_MS_HOST, NOTIFICATIONS_MS_PORT)
+    # messages microservice
+    MESSAGES_MS_PROTO = os.getenv('MESSAGES_MS_PROTO', 'http')
+    MESSAGES_MS_HOST = os.getenv('MESSAGES_MS_HOST', 'localhost')
+    MESSAGES_MS_PORT = os.getenv('MESSAGES_MS_PORT', 5003)
+    MESSAGES_MS_URL = '%s://%s:%s' % (MESSAGES_MS_PROTO, MESSAGES_MS_HOST, MESSAGES_MS_PORT)
 
     # Configuring sessions
     SESSION_TYPE = 'redis'
 
     # secret key
-    SECRET_KEY = os.getenv('APP_SECRET_KEY', b'isreallynotsecretatall')
+    SECRET_KEY = os.getenv('APP_SECRET', b'isreallynotsecretatall')
 
 
 class DebugConfig(Config):
@@ -86,6 +80,6 @@ class ProdConfig(Config):
     DEBUG = False
 
     import os
-    SECRET_KEY = os.getenv('APP_SECRET_KEY', os.urandom(24))
+    SECRET_KEY = os.getenv('APP_SECRET', os.urandom(24))
 
 
