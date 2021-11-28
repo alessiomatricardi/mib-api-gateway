@@ -5,7 +5,8 @@ from wtforms.fields.html5 import EmailField
 
 
 class LoginForm(FlaskForm):
-    """Form created to allow the customers sign in to the application.
+    """
+    Form created to allow users sign in to the application.
     This form requires personal email and password in order to access the account.
     """
 
