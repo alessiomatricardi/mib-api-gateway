@@ -22,7 +22,7 @@ class ViewTest(unittest.TestCase):
         :return: customer
         """
         user = self.generate_user()
-        response = self.user_manager.create_user(
+        response = self.user_manager.register(
                 'customer',
                 user.get('email'),
                 user.get('password'),

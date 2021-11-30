@@ -5,6 +5,14 @@
 
 {% block content %}
 
+{% with msg = get_flashed_messages() %}
+  {% if msg %}
+    <div class="alert alert-danger" role="alert">
+      {{ msg[0] }}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <main class="form-register text-center">
   <form action="" method="POST">
 

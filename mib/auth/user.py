@@ -16,8 +16,8 @@ class User(UserMixin):
     has_picture = None
     content_filter_enabled = None
     is_active = None
-    authenticated = None
     is_anonymous = False
+    is_authenticated = False
     extra_data = None
 
     # A list of fields to be serialized TODO CONTROLLARE
@@ -38,16 +38,22 @@ class User(UserMixin):
         self.id = kw["id"]
         self.email = kw["email"]
         self.is_active = kw["is_active"]
-        self.authenticated = kw["authenticated"]
         self.is_anonymous = kw["is_anonymous"]
+        self.firstname = kw["firstname"]
+        self.lastname = kw["lastname"]
+        self.date_of_birth = kw["date_of_birth"]
+        self.lottery_points = kw["lottery_points"]
+        self.has_picture = kw["has_picture"]
+        self.content_filter_enabled = kw["content_filter_enabled"]
+        #elf.is_authenticated = kw["is_authenticated"]
         self.extra_data = kw['extra']
 
     def get_id(self):
         return self.id
 
     def is_authenticated(self):
-        return self.authenticated
-
+        return self.is_authenticated
+        
     def __getattr__(self, item):
         if item in self.__dict__:
             return self[item]
