@@ -134,6 +134,7 @@ class ModifyPasswordForm(FlaskForm):
         # this add minlength attribute to the <input> rendered, for client-side check
         render_kw = {'minlength' : '8'}
     )
+    
     new_password = f.PasswordField(
         'New password', 
         validators=[

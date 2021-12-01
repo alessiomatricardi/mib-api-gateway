@@ -31,8 +31,8 @@ def _login():
                     )
 
                 elif status_code == 401:
-                    form.email.errors.append(
-                    "User credentials are not correct or user is no longer active"
+                    form.password.errors.append(
+                        "Password is wrong or this account is no longer active"
                     )
                 
                 return render_template('login.html', form=form)
