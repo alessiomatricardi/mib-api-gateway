@@ -5,10 +5,10 @@ from flask_login import (logout_user)
 from flask import abort
 import requests
 
+USERS_ENDPOINT = app.config['USERS_MS_URL']
+REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
 
 class UserManager:
-    USERS_ENDPOINT = app.config['USERS_MS_URL']
-    REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
 
     @classmethod
     def get_user_by_id(cls, user_id: int) -> User:
@@ -19,8 +19,8 @@ class UserManager:
         :return: User obj with id=user_id
         """
         try:
-            response = requests.get("%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id)),
-                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS)
+            response = requests.get("%s/users/%s" % (USERS_ENDPOINT, str(user_id)),
+                                    timeout=REQUESTS_TIMEOUT_SECONDS)
             json_payload = response.json()
   
             if response.status_code == 200:
@@ -34,6 +34,8 @@ class UserManager:
 
         return user
 
+    # TODO QUESTO NON DOVREBBE ESSERE ESPOSTO ALL'UTENTE
+    # AL MASSIMO DENTRO IL GATEWAY
     @classmethod
     def get_user_by_email(cls, user_email: str):
         """
@@ -67,7 +69,7 @@ class UserManager:
                                      json={
                                          'email': email,
                                          'password': password,
-                                         'date_of_birth':birthdate,
+                                         'date_of_birth': birthdate,
                                          'firstname': firstname,
                                          'lastname': lastname,    
                                      },
@@ -84,11 +86,10 @@ class UserManager:
         """
         This method contacts the users microservice
         to allow the users to update their profiles
-        :param password:
+        :param password: 
         :param firstaname:
         :param lastname:
         :param user_id: the customer id
-            password: the user password
           
         :return: User updated
         """
@@ -110,7 +111,7 @@ class UserManager:
         raise RuntimeError('Error with searching for the user %s' % user_id)
 
     @classmethod
-    def modify_data(cls, user_id: int, firstname: str, lastname: str, birthdate):
+    def modify_data(cls, user_id: int, firstname: str, lastname: str, birthdate: str):
         """
 
         :return: User updated
@@ -178,7 +179,7 @@ class UserManager:
         return response
 
     @classmethod
-    def login_user(cls, email: str, password: str):
+    def login_user(cls, email: str, password: str) -> tuple[User, int]:
         """
         This method authenticates the user trough users AP
         :param email: user email
@@ -212,7 +213,7 @@ class UserManager:
                 % (response.status_code, json_response['error_message'])
             )
     @classmethod
-    def content_filter(cls, user_id: str, enabled: bool):
+    def modify_content_filter(cls, user_id: str, enabled: bool):
         try:
             url = "%s/profile/content_filter" % cls.USERS_ENDPOINT
             response = requests.post(url,
@@ -229,7 +230,7 @@ class UserManager:
         return response
     
     @classmethod
-    def _modify_profile_picture(cls, user_id: str, image: base64):
+    def modify_profile_picture(cls, user_id: str, image: base64):
         try:
             url = "%s/profile/picture" % cls.USERS_ENDPOINT
             response = requests.post(url,

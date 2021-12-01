@@ -21,20 +21,20 @@ def _login():
         if form.validate_on_submit():
             email, password = form.data['email'], form.data['password']
             user, status_code = UserManager.login_user(email, password)
-        
-            # the user doesn't exists
-            if status_code == 404:
-                # this add an error message that will be printed on screen
-                form.email.errors.append(
-                    "Account " + email + " does not exist."
-                )
-                return render_template('login.html', form=form)
 
-            # TODO handle when the user is no more active
-            elif status_code == 401:
-                form.email.errors.append(
-                   "User credentials are not correct or user is no longer active"
-                )
+            if user is None:
+                # the user doesn't exists
+                if status_code == 404:
+                    # this add an error message that will be printed on screen
+                    form.email.errors.append(
+                        "Account " + email + " does not exist."
+                    )
+
+                elif status_code == 401:
+                    form.email.errors.append(
+                    "User credentials are not correct or user is no longer active"
+                    )
+                
                 return render_template('login.html', form=form)
 
             else:
@@ -67,7 +67,7 @@ if current_user is None or not current_user.is_authenticated:
 @login_required
 def _logout():
     # if the user is not logged in, don't logout and directly redirect him to homepage
-   
+    
     logout_user()
     
     return redirect('/')

@@ -1,4 +1,5 @@
 from flask_login import UserMixin
+import datetime
 
 
 class User(UserMixin):
@@ -16,12 +17,12 @@ class User(UserMixin):
     has_picture = None
     content_filter_enabled = None
     is_active = None
+    authenticated = False
     is_anonymous = False
-    is_authenticated = False
     extra_data = None
 
     # A list of fields to be serialized TODO CONTROLLARE
-    SERIALIZE_LIST = ['id', 'email', 'is_active', 'is_anonymous','firstname','lastname','date_of_birth','lottery_points','has_picture','content_filter_enabled']
+    SERIALIZE_LIST = ['id', 'email', 'is_active', 'firstname','lastname','date_of_birth','lottery_points','has_picture','content_filter_enabled']
 
     @staticmethod
     def build_from_json(json: dict):
@@ -38,22 +39,23 @@ class User(UserMixin):
         self.id = kw["id"]
         self.email = kw["email"]
         self.is_active = kw["is_active"]
+        self.authenticated = kw["authenticated"]
         self.is_anonymous = kw["is_anonymous"]
         self.firstname = kw["firstname"]
         self.lastname = kw["lastname"]
-        self.date_of_birth = kw["date_of_birth"]
+        self.date_of_birth = datetime.datetime.fromisoformat(kw["date_of_birth"])
         self.lottery_points = kw["lottery_points"]
         self.has_picture = kw["has_picture"]
         self.content_filter_enabled = kw["content_filter_enabled"]
-        #elf.is_authenticated = kw["is_authenticated"]
         self.extra_data = kw['extra']
 
     def get_id(self):
         return self.id
 
+    @property
     def is_authenticated(self):
-        return self.is_authenticated
-        
+        return self.authenticated
+
     def __getattr__(self, item):
         if item in self.__dict__:
             return self[item]
