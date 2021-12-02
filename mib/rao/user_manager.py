@@ -19,9 +19,14 @@ class UserManager:
         :return: User obj with id=user_id
         """
         try:
-            response = requests.get("%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id)),
-                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS)
-            json_payload = response.json()
+            url = "%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id))
+            response = requests.get(url,
+                                        json={
+                                            'requester_id': user_id,     
+                                        },
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                        )
+            json_payload = response.json()['user']
   
             if response.status_code == 200:
                 # user is authenticated
@@ -79,6 +84,7 @@ class UserManager:
 
         return response
 
+    #TODO delte update_user
     @classmethod
     def update_user(cls, user_id: int, firstname: str, password: str, lastname: str):
         """
@@ -244,3 +250,54 @@ class UserManager:
             return abort(500)
 
         return response
+
+    @classmethod
+    def _get_users_list(cls, user_id: str):
+        try:
+            url = "%s/users" % cls.USERS_ENDPOINT
+            response = requests.get(url,
+                                        json={
+                                            'requester_id': user_id,     
+                                        },
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                        )
+            #TODO check how to handle a list of Users 
+
+            #print(response.json()['users'])
+            json_payload = response.json()['users']
+            
+            userlist = []
+
+            if response.status_code == 200:
+                for i in json_payload:
+                    user = User.build_from_json(i)
+                    userlist.append(user)
+
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            return abort(500)
+
+        return userlist
+
+    @classmethod
+    def _get_user_picture(cls, user_id: int):
+        try:
+            url = "%s/users/%s/picture" % (cls.USERS_ENDPOINT, str(user_id))
+            response = requests.get(url,
+                                        json={
+                                            'requester_id': user_id,     
+                                        },
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                        )
+            json_payload = response.json()
+            image = None
+            image100 = None
+
+            if response.status_code == 200:
+                image = json_payload['image']
+                image100 = json_payload['image_100']
+
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            return abort(500)
+
+        return image100
+

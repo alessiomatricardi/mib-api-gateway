@@ -163,3 +163,6 @@ class ContentFilterForm(FlaskForm):
 
 class ProfilePictureForm(FlaskForm):
     image = FileField(validators=[FileRequired('File was empty!')])
+
+class BlockForm(FlaskForm):
+    user_id = f.HiddenField(validators=[DataRequired()])

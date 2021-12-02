@@ -7,11 +7,13 @@ from flask_login.utils import _get_user
 from flask_wtf.form import _is_submitted
 
 from mib.forms import UserForm
-from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm
+from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm
 
 from mib.rao.user_manager import UserManager
 from mib.auth.user import User
 
+from io import BytesIO
+from PIL import Image, ImageDraw
 users = Blueprint('users', __name__)
 
 
@@ -275,3 +277,51 @@ def _modify_profile_picture():
             return redirect('/profile')
     else:
         return render_template('modify_picture.html', form=form)
+
+@login_required
+@users.route('/users', methods=['GET'])
+def _users():
+    # checking if there is a logged user, otherwise redirect to login
+    requester_id = current_user.id
+
+
+    recipients = UserManager._get_users_list(
+        requester_id
+    )
+        # rendering the template
+        # update result whit template
+    return render_template("users.html", users=recipients)
+
+@login_required
+@users.route('/users/<user_id>', methods=['GET'])
+def _get_user(user_id):
+
+    requester_id = current_user.id
+
+    user = UserManager.get_user_by_id(
+        requester_id
+    )
+
+    block_form = BlockForm(user_id = user.id)
+
+    # render the page
+    return render_template('user_details.html', user = user, block_form = block_form)
+
+
+@login_required
+@users.route('/users/<user_id>/picture', methods=['GET'])
+def _get_profile_photo(user_id):
+    # checking if there is a logged user, otherwise redirect to login
+    requester_id = current_user.id
+
+
+    image100 = UserManager._get_user_picture(
+        requester_id
+    )
+        # rendering the template
+        # update result whit template
+    img_data = BytesIO(base64.b64decode(image100))
+
+    image = image.save(img_data)
+    #TODO transform from bytesio to img
+    return img_data
