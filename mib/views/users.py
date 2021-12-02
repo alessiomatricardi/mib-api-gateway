@@ -36,6 +36,7 @@ def _register():
             firstname = form.data['firstname']
             lastname = form.data['lastname']
             date_of_birth = form.data['date_of_birth']
+            birthdate = date_of_birth.strftime("%Y-%m-%d")
 
             #the register method will send the request to the microservice User
             response = UserManager.register(
@@ -43,7 +44,7 @@ def _register():
                 password,
                 firstname,
                 lastname,
-                date_of_birth,
+                birthdate,
             )
 
             if response.status_code == 201:
