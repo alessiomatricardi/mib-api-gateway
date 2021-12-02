@@ -322,6 +322,6 @@ def _get_profile_photo(user_id):
         # update result whit template
     img_data = BytesIO(base64.b64decode(image100))
 
-    image = image.save(img_data)
+    #image = img_data.save(byte_io, 'PNG')
     #TODO transform from bytesio to img
     return img_data
