@@ -39,8 +39,6 @@ class User(UserMixin):
         self.id = kw["id"]
         self.email = kw["email"]
         self.is_active = kw["is_active"]
-        self.authenticated = kw["authenticated"]
-        self.is_anonymous = kw["is_anonymous"]
         self.firstname = kw["firstname"]
         self.lastname = kw["lastname"]
         self.date_of_birth = datetime.datetime.fromisoformat(kw["date_of_birth"])
