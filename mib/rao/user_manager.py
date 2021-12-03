@@ -23,8 +23,8 @@ class UserManager:
             response = requests.get("%s/users/%s" % (USERS_ENDPOINT, str(user_id)),
                                     timeout=REQUESTS_TIMEOUT_SECONDS,
                                     json = json)
-            json_payload = response.json()
-  
+            json_payload = response.json()['user']
+
             if response.status_code == 200:
                 # user is authenticated
                 user = User.build_from_json(json_payload)
@@ -73,7 +73,7 @@ class UserManager:
                                          'password': password,
                                          'date_of_birth': birthdate,
                                          'firstname': firstname,
-                                         'lastname': lastname,    
+                                         'lastname': lastname,
                                      },
                                      timeout=REQUESTS_TIMEOUT_SECONDS
                                      )
@@ -91,7 +91,7 @@ class UserManager:
         """
         try:
             url = "%s/profile/data" % USERS_ENDPOINT
-            response = requests.post(url,
+            response = requests.patch(url,
                                     json={
                                         'requester_id': user_id,
                                         'firstname': firstname,
@@ -106,7 +106,7 @@ class UserManager:
             return abort(500)
 
         raise RuntimeError('Error with searching for the user %s' % user_id)
-    
+
     @classmethod
     def modify_password(cls, user_id: int, old_password: str, new_password: str, repeat_new_password: str):
         """
@@ -115,7 +115,7 @@ class UserManager:
         """
         try:
             url = "%s/profile/password" % USERS_ENDPOINT
-            response = requests.post(url,
+            response = requests.patch(url,
                                     json={
                                         'requester_id': user_id,
                                         'old_password': old_password,
@@ -138,10 +138,10 @@ class UserManager:
                     ):
         try:
             url = "%s/unregister" % USERS_ENDPOINT
-            response = requests.post(url,
+            response = requests.put(url,
                                      json={
-                                         'id': user_id,
-                                         'password': password,      
+                                         'requester_id': user_id,
+                                         'password': password,
                                      },
                                      timeout=REQUESTS_TIMEOUT_SECONDS
                                      )
@@ -161,17 +161,15 @@ class UserManager:
         """
         payload = dict(email=email, password=password)
         try:
-            print('trying response....')
             response = requests.post('%s/login' % USERS_ENDPOINT,
                                      json=payload,
                                      timeout=REQUESTS_TIMEOUT_SECONDS
                                      )
-            print('received response....')
             json_response = response.json()
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             # We can't connect to Users MS
             return abort(500)
-        
+
         status_code = response.status_code
 
         # user doesn't exist or is not authenticated
@@ -185,15 +183,15 @@ class UserManager:
                 'Microservice users returned an invalid status code %s, and message %s'
                 % (response.status_code, json_response['error_message'])
             )
-    
+
     @classmethod
     def modify_content_filter(cls, user_id: str, enabled: bool):
         try:
             url = "%s/profile/content_filter" % USERS_ENDPOINT
-            response = requests.post(url,
+            response = requests.patch(url,
                                         json={
-                                            'id': user_id,
-                                            'content_filter': enabled,      
+                                            'requester_id': user_id,
+                                            'content_filter': enabled,
                                         },
                                         timeout=REQUESTS_TIMEOUT_SECONDS
                                         )
@@ -202,15 +200,15 @@ class UserManager:
             return abort(500)
 
         return response
-    
+
     @classmethod
     def modify_profile_picture(cls, user_id: str, image: base64):
         try:
             url = "%s/profile/picture" % USERS_ENDPOINT
-            response = requests.post(url,
+            response = requests.put(url,
                                         json={
-                                            'id': user_id,
-                                            'image': image,      
+                                            'requester_id': user_id,
+                                            'image': image,
                                         },
                                         timeout=REQUESTS_TIMEOUT_SECONDS
                                         )

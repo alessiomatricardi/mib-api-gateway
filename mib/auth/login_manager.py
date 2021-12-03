@@ -4,7 +4,7 @@ from mib.rao.user_manager import UserManager
 
 def init_login_manager(app):
     login_manager = LoginManager(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'auth._login'
 
     @login_manager.user_loader
     def load_user(user_id):

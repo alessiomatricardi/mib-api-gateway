@@ -125,9 +125,10 @@ def _modify_personal_data():
             firstname = form.data['firstname']
             lastname = form.data['lastname']
             date_of_birth = form.data['date_of_birth']
+            birthdate = date_of_birth.strftime("%Y-%m-%d")
 
             response = UserManager.modify_data(id, firstname, lastname,
-                                               date_of_birth)
+                                               birthdate)
 
             # if user data are correctly modified
             if response.status_code == 200:
@@ -225,16 +226,13 @@ def _content_filter():
         If the operation is successfull shows the view of the profile updated.
     """
     form = ContentFilterForm()
-    
+
     if form.validate_on_submit():
 
         id = current_user.id
         enabled = form.data['filter_enabled']
 
-        response = UserManager.content_filter(
-            id,
-            enabled
-        )
+        response = UserManager.modify_content_filter(id, enabled)
 
         if response.status_code == 404:
             return redirect('/logout')
@@ -243,7 +241,7 @@ def _content_filter():
             # TODO SHOW SOMETHING?
             return redirect('/profile')
     else:
-        
+
         return redirect('/profile')
 
 
@@ -258,9 +256,9 @@ def _modify_profile_picture():
         If the operation is successfull returns the view of the profile.
     """
     form = ProfilePictureForm()
-    
+
     if request.method == 'POST':
-            
+
         if form.validate_on_submit(): # TODO VALIDATE IMAGES
 
             data = form.data['image']
@@ -283,7 +281,7 @@ def _modify_profile_picture():
                 abort(500)
                 #TODO possiamo gestirlo meglio? magari dicendo qualcosa all'utente
             else:
-                
+
                 return redirect('/profile')
 
     return render_template('modify_picture.html', form=form)
