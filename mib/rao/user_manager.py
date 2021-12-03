@@ -23,9 +23,9 @@ class UserManager:
             response = requests.get("%s/users/%s" % (USERS_ENDPOINT, str(user_id)),
                                     timeout=REQUESTS_TIMEOUT_SECONDS,
                                     json = json)
-            json_payload = response.json()['user']
 
             if response.status_code == 200:
+                json_payload = response.json()['user']
                 # user is authenticated
                 user = User.build_from_json(json_payload)
             else:
@@ -180,8 +180,7 @@ class UserManager:
             return user, status_code
         else:
             raise RuntimeError(
-                'Microservice users returned an invalid status code %s, and message %s'
-                % (response.status_code, json_response['error_message'])
+                'Microservice users returned an invalid status code %s' % (response.status_code)
             )
 
     @classmethod
