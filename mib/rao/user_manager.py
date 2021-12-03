@@ -1,7 +1,7 @@
 import base64
 from mib.auth.user import User
 from mib import app
-from flask_login import (logout_user)
+from flask_login import logout_user
 from flask import abort
 import requests
 
@@ -19,8 +19,10 @@ class UserManager:
         :return: User obj with id=user_id
         """
         try:
+            json = {'requester_id' : user_id}
             response = requests.get("%s/users/%s" % (USERS_ENDPOINT, str(user_id)),
-                                    timeout=REQUESTS_TIMEOUT_SECONDS)
+                                    timeout=REQUESTS_TIMEOUT_SECONDS,
+                                    json = json)
             json_payload = response.json()
   
             if response.status_code == 200:
@@ -45,8 +47,8 @@ class UserManager:
         :return: User obj with email=user_email
         """
         try:
-            response = requests.get("%s/user_email/%s" % (cls.USERS_ENDPOINT, user_email),
-                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS)
+            response = requests.get("%s/user_email/%s" % (USERS_ENDPOINT, user_email),
+                                    timeout=REQUESTS_TIMEOUT_SECONDS)
             json_payload = response.json()
             user = None
 
@@ -64,7 +66,7 @@ class UserManager:
                     firstname: str, lastname: str,
                     birthdate):
         try:
-            url = "%s/register" % cls.USERS_ENDPOINT
+            url = "%s/register" % USERS_ENDPOINT
             response = requests.post(url,
                                      json={
                                          'email': email,
@@ -73,7 +75,7 @@ class UserManager:
                                          'firstname': firstname,
                                          'lastname': lastname,    
                                      },
-                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                     timeout=REQUESTS_TIMEOUT_SECONDS
                                      )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -82,50 +84,21 @@ class UserManager:
         return response
 
     @classmethod
-    def update_user(cls, user_id: int, firstname: str, password: str, lastname: str):
-        """
-        This method contacts the users microservice
-        to allow the users to update their profiles
-        :param password: 
-        :param firstaname:
-        :param lastname:
-        :param user_id: the customer id
-          
-        :return: User updated
-        """
-        try:
-            url = "%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id))
-            response = requests.put(url,
-                                    json={
-                                        'firstname': firstname,
-                                        'lastname': lastname,
-                                        'password': password,
-                                    },
-                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS
-                                    )
-            return response
-
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            return abort(500)
-
-        raise RuntimeError('Error with searching for the user %s' % user_id)
-
-    @classmethod
     def modify_data(cls, user_id: int, firstname: str, lastname: str, birthdate: str):
         """
 
         :return: User updated
         """
         try:
-            url = "%s/profile/data" % cls.USERS_ENDPOINT
+            url = "%s/profile/data" % USERS_ENDPOINT
             response = requests.post(url,
                                     json={
-                                        'id': user_id,
+                                        'requester_id': user_id,
                                         'firstname': firstname,
                                         'lastname': lastname,
                                         'date_of_birth': birthdate,
                                     },
-                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                    timeout=REQUESTS_TIMEOUT_SECONDS
                                     )
             return response
 
@@ -141,15 +114,15 @@ class UserManager:
         :return: Password updated
         """
         try:
-            url = "%s/profile/password" % cls.USERS_ENDPOINT
+            url = "%s/profile/password" % USERS_ENDPOINT
             response = requests.post(url,
                                     json={
-                                        'id': user_id,
+                                        'requester_id': user_id,
                                         'old_password': old_password,
                                         'new_password': new_password,
                                         'repeat_new_password': repeat_new_password,
                                     },
-                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                    timeout=REQUESTS_TIMEOUT_SECONDS
                                     )
             return response
 
@@ -164,13 +137,13 @@ class UserManager:
                     password: str,
                     ):
         try:
-            url = "%s/unregister" % cls.USERS_ENDPOINT
+            url = "%s/unregister" % USERS_ENDPOINT
             response = requests.post(url,
                                      json={
                                          'id': user_id,
                                          'password': password,      
                                      },
-                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                     timeout=REQUESTS_TIMEOUT_SECONDS
                                      )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -179,7 +152,7 @@ class UserManager:
         return response
 
     @classmethod
-    def login_user(cls, email: str, password: str) -> tuple[User, int]:
+    def login_user(cls, email: str, password: str):
         """
         This method authenticates the user trough users AP
         :param email: user email
@@ -189,9 +162,9 @@ class UserManager:
         payload = dict(email=email, password=password)
         try:
             print('trying response....')
-            response = requests.post('%s/login' % cls.USERS_ENDPOINT,
+            response = requests.post('%s/login' % USERS_ENDPOINT,
                                      json=payload,
-                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                     timeout=REQUESTS_TIMEOUT_SECONDS
                                      )
             print('received response....')
             json_response = response.json()
@@ -212,16 +185,17 @@ class UserManager:
                 'Microservice users returned an invalid status code %s, and message %s'
                 % (response.status_code, json_response['error_message'])
             )
+    
     @classmethod
     def modify_content_filter(cls, user_id: str, enabled: bool):
         try:
-            url = "%s/profile/content_filter" % cls.USERS_ENDPOINT
+            url = "%s/profile/content_filter" % USERS_ENDPOINT
             response = requests.post(url,
                                         json={
                                             'id': user_id,
                                             'content_filter': enabled,      
                                         },
-                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                        timeout=REQUESTS_TIMEOUT_SECONDS
                                         )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -232,13 +206,13 @@ class UserManager:
     @classmethod
     def modify_profile_picture(cls, user_id: str, image: base64):
         try:
-            url = "%s/profile/picture" % cls.USERS_ENDPOINT
+            url = "%s/profile/picture" % USERS_ENDPOINT
             response = requests.post(url,
                                         json={
                                             'id': user_id,
                                             'image': image,      
                                         },
-                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                        timeout=REQUESTS_TIMEOUT_SECONDS
                                         )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
