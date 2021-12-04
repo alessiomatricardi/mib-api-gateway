@@ -126,7 +126,7 @@ class ModifyPasswordForm(FlaskForm):
 
     old_password = f.PasswordField(
         'Old password', 
-         validators=[
+        validators=[
             DataRequired(),
             # this allow us to check the password on server-side
             Length(min = 8, message = 'Password must be at least %(min)d characters'),
@@ -134,6 +134,7 @@ class ModifyPasswordForm(FlaskForm):
         # this add minlength attribute to the <input> rendered, for client-side check
         render_kw = {'minlength' : '8'}
     )
+    
     new_password = f.PasswordField(
         'New password', 
         validators=[
@@ -159,6 +160,9 @@ class ModifyPasswordForm(FlaskForm):
     display = ['old_password', 'new_password', 'repeat_new_password']
 
 class ContentFilterForm(FlaskForm):
+    '''
+    TODO COMMENTARE
+    '''
     filter_enabled = f.BooleanField()
 
 class ProfilePictureForm(FlaskForm):

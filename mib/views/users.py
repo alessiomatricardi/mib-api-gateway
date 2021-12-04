@@ -1,18 +1,17 @@
 import base64
 
-from flask import Blueprint, redirect, render_template, url_for, flash, abort, request
-from flask_login import (login_user, login_required)
+from flask import Blueprint, redirect, render_template, flash, abort, request
+from flask_login import login_required
 from flask_login import current_user, logout_user
+
 from flask_login.utils import _get_user
 from flask_wtf.form import _is_submitted
 from flask.helpers import send_from_directory
 import os
-
 from mib.forms import UserForm
 from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm
 from PIL import Image
 from mib.rao.user_manager import UserManager
-from mib.auth.user import User
 
 from io import BytesIO
 users = Blueprint('users', __name__)
@@ -22,11 +21,17 @@ users = Blueprint('users', __name__)
 def register():
     """This method allows the creation of a new user into the database
 
-    Returns:
-        Redirects the user into his profile page, once he's logged in
-    """
-    form = UserForm()
 
+    Returns:
+        Redirects the user into homepage, once he's logged in
+    """
+
+    # if the user is already logged in, redirect him to homepage
+    #TODO usare @login_required per controllare se un utente è loggato
+    if current_user is not None and hasattr(current_user, 'id'):
+        return redirect('/')
+
+    form = UserForm()
 
     #if the method is POST the data contained in the UserForm are sent to the UserManager.register method
 
@@ -65,6 +70,7 @@ def register():
             for errorMessage in errorMessages:
                 flash('The field %s is incorrect: %s' % (fieldName, errorMessage))
 
+
     return render_template('register.html', form=form)
 
 
@@ -81,74 +87,74 @@ def _unregister():
 
     form = UnregisterForm()
 
-    if form.is_submitted():
-        password = form.data['password']
-        id = current_user.id
-        
-        response = UserManager.unregister(
-            id,
-            password
-        )
-        
-        if response.status_code == 404:
-            redirect('/login')
-        
-        elif response.status_code == 401:
-            #Password is wrong, so user is unauthorized
-            return render_template('unregister.html', form=form, user=current_user)
+    if request.method == 'POST':
 
-        else:
-            #the user successfully unregistered
-            logout_user()
-            return redirect('/')
-    else:
-        return render_template('unregister.html', form=form, user=current_user)
+        if form.validate_on_submit():
+
+            password = form.data['password']
+
+            response = UserManager.unregister(current_user.id, password)
+
+
+            if response.status_code == 404:
+                # if the user is not found, then logout it directly
+                redirect('/logout')
+
+            elif response.status_code == 401:
+                # Password is wrong, so user is unauthorized
+                return render_template('unregister.html', form=form, user=current_user)
+
+            else:
+                #the user successfully unregistered
+                logout_user()
+                return redirect('/')
+
+    return render_template('unregister.html', form=form, user=current_user)
 
 
 @login_required
 @users.route('/profile/data/edit', methods=['GET', 'POST'])
 def _modify_personal_data():
     """
-    MOdify firstname lastname and date of birth of the user.
+    Modify firstname lastname and date of birth of the user.
 
 
     Returns:
         If the operation is successfull returns the view of the profile updated
     """
     form = ModifyPersonalDataForm()
-    
-    if form.is_submitted() :
-        
-        id = current_user.id
-        firstname = form.data['firstname']
-        lastname = form.data['lastname']
-        date_of_birth = form.data['date_of_birth']
-        date = date_of_birth.strftime('%Y-%m-%d')
-        
-        response = UserManager.modify_data(
-            id,
-            firstname,
-            lastname,
-            date
-        )
-    
-        # if user data are correctly modified
-        if response.status_code == 404:
-            return redirect('/login')
-        
-        else:
-            # if user data are correctly modified
-           return redirect('/profile')
 
-    else:
+    if request.method == 'POST':
+
+        if form.validate_on_submit():
+
+            id = current_user.id
+            firstname = form.data['firstname']
+            lastname = form.data['lastname']
+            date_of_birth = form.data['date_of_birth']
+            birthdate = date_of_birth.strftime("%Y-%m-%d")
+
+            response = UserManager.modify_data(id, firstname, lastname,
+                                               birthdate)
+
+            # if user data are correctly modified
+            if response.status_code == 200:
+                return redirect('/profile')
+
+            # something went wrong
+            # TODO si può stampare qualcosa?
+
+            return render_template('modify_personal_data.html', form=form)
+
+    elif request.method == 'GET':
         # populate the form with the existing data of the user
         form.firstname.data = current_user.firstname
         form.lastname.data = current_user.lastname
         form.date_of_birth.data = current_user.date_of_birth
 
-        return render_template('modify_personal_data.html', form=form)
+    return render_template('modify_personal_data.html', form=form)
 
-#@login_required
+@login_required # TODO SERVE????
 @users.route('/profile/password/edit', methods=['GET', 'POST'])
 def _modify_password():
     """
@@ -160,44 +166,44 @@ def _modify_password():
     """
     form = ModifyPasswordForm()
 
-    if form.is_submitted() :
-        
-        id = current_user.id
-        old_password = form.data['old_password']
-        new_password = form.data['new_password']
-        repeat_new_password = form.data['repeat_new_password']
-       
-        response = UserManager.modify_password(
-            id,
-            old_password,
-            new_password,
-            repeat_new_password
-        )
-    
-        
-        if response.status_code == 401:
-            #form['old_password'].errors.append("The old password you inserted is incorrect. Please insert the correct one.")
-            flash('The old password you inserted is incorrect. Please insert the correct one.')
+    if request.method == 'POST':
 
-        elif response.status_code == 403:
-            #form.repeat_new_password.errors.append("The new password and its repetition must be equal.")
-            flash('The new password and its repetition must be equal.')
+        if form.validate_on_submit():
 
-        #TODO check if it is necessary after @login_required fix
-        elif response.status_code == 404:
-            return redirect('/login')
-            
-        elif response.status_code == 409:
-            #form.new_password.errors.append("Please insert a password different from the old one.")
-            flash('Please insert a password different from the old one.')
-        else:
-            return redirect('/profile')
-            
+            id = current_user.id
+            old_password = form.old_password
+            new_password = form.new_password
+            repeat_new_password = form.repeat_new_password
 
-        return render_template('modify_password.html', form=form)
-    else:
+            response = UserManager.modify_password(
+                id,
+                old_password,
+                new_password,
+                repeat_new_password
+            )
 
-        return render_template('modify_password.html', form=form)
+            # user inserted a wrong password
+            if response.status_code == 401:
+                form.old_password.errors.append(
+                    "The old password you inserted is incorrect. Please insert the correct one."
+                )
+
+            # new password is equal to the old or new and repeated aren't equal
+            elif response.status_code == 400:
+                message_to_print = "TODO TODO TODO" # TODO retrieve from response
+                form.new_password.errors.append(
+                    message_to_print)
+
+            #TODO check if it is necessary after @login_required fix
+            elif response.status_code == 404:
+                return redirect('/logout')
+
+            else:
+                # something went wrong???
+                return redirect('/profile')
+
+
+    return render_template('modify_password.html', form=form)
 
 @users.route('/profile', methods=['GET'])
 def _show_profile():
@@ -240,22 +246,22 @@ def _content_filter():
         If the operation is successfull shows the view of the profile updated.
     """
     form = ContentFilterForm()
-    if form.is_submitted():
+
+    if form.validate_on_submit():
 
         id = current_user.id
         enabled = form.data['filter_enabled']
 
-        response = UserManager.content_filter(
-            id,
-            enabled
-        )
+        response = UserManager.modify_content_filter(id, enabled)
 
         if response.status_code == 404:
-            return redirect('/login')
+            return redirect('/logout')
 
         else:
+            # TODO SHOW SOMETHING?
             return redirect('/profile')
     else:
+
         return redirect('/profile')
 
 
@@ -270,29 +276,34 @@ def _modify_profile_picture():
         If the operation is successfull returns the view of the profile.
     """
     form = ProfilePictureForm()
-    if form.is_submitted():
 
-        data = form.data['image']
-        
-        img = data.stream.read()
-        str_image = base64.encodebytes(img).decode('utf-8')
-   
-        id = current_user.id
-      
+    if request.method == 'POST':
 
-        response = UserManager._modify_profile_picture(
-            id,
-            str_image
-        )
+        if form.validate_on_submit(): # TODO VALIDATE IMAGES
+            data = form.data['image']
 
-        if response.status_code == 404:
-            return redirect('/login')
-        elif response.status_code == 500:
-            abort(500)
-        else:
-            return redirect('/profile')
-    else:
-        return render_template('modify_picture.html', form=form)
+            img = data.stream.read()
+            str_image = base64.encodebytes(img).decode('utf-8')
+
+            id = current_user.id
+
+            response = UserManager.modify_profile_picture(
+                id,
+                str_image
+            )
+
+            if response.status_code == 404:
+
+                return redirect('/logout')
+            elif response.status_code == 500:
+
+                abort(500)
+                #TODO possiamo gestirlo meglio? magari dicendo qualcosa all'utente
+            else:
+
+                return redirect('/profile')
+
+    return render_template('modify_picture.html', form=form)
 
 @login_required
 @users.route('/users', methods=['GET'])
@@ -370,5 +381,3 @@ def _get_profile_photo(user_id):
     print("filename:")
     print(filename)
     return send_from_directory(os.path.join(os.getcwd(), 'mib', 'static', 'pictures'), filename)
-  
-    
