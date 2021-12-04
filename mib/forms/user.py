@@ -166,7 +166,7 @@ class ContentFilterForm(FlaskForm):
     filter_enabled = f.BooleanField()
 
 class ProfilePictureForm(FlaskForm):
-    '''
-    TODO COMMENTARE
-    '''
     image = FileField(validators=[FileRequired('File was empty!')])
+
+class BlockForm(FlaskForm):
+    user_id = f.HiddenField(validators=[DataRequired()])
