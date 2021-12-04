@@ -10,6 +10,7 @@ auth = Blueprint('auth', __name__)
 @auth.route('/login', methods=['GET', 'POST'])
 def _login():
     # if the user is already logged in, redirect him to homepage
+    #TODO usare @login_required per controllare se un utente è loggato
     if current_user is not None and hasattr(current_user, 'id'):
         return redirect('/')
     
@@ -28,18 +29,19 @@ def _login():
                     form.email.errors.append(
                         "Account " + email + " does not exist."
                     )
+
                 elif status_code == 401:
-                    # password is wrong or the user unregistered his profile
-                    # this add an error message that will be printed on screen
                     form.password.errors.append(
                         "Password is wrong or this account is no longer active"
                     )
+                
                 return render_template('login.html', form=form)
-            
-            # login the user
-            login_user(user)
-            return redirect('/')
 
+            else:
+                # login the user
+                login_user(user)
+                return redirect('/')
+        
     else:
         return render_template('login.html', form=form)
 
@@ -62,10 +64,10 @@ if current_user is None or not current_user.is_authenticated:
     // you can't perform this action - unauthorized
 '''
 @auth.route("/logout", methods=['GET'])
-#@login_required
+@login_required
 def _logout():
     # if the user is not logged in, don't logout and directly redirect him to homepage
-    if current_user is not None and hasattr(current_user, 'id'):
-        logout_user()
+    
+    logout_user()
     
     return redirect('/')
