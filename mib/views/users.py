@@ -5,19 +5,20 @@ from flask_login import (login_user, login_required)
 from flask_login import current_user, logout_user
 from flask_login.utils import _get_user
 from flask_wtf.form import _is_submitted
+from flask.helpers import send_from_directory
+import os
 
 from mib.forms import UserForm
 from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm
-
+from PIL import Image
 from mib.rao.user_manager import UserManager
 from mib.auth.user import User
 
 from io import BytesIO
-from PIL import Image, ImageDraw
 users = Blueprint('users', __name__)
 
 
-@users.route('/register', methods=['GET', 'POST'])
+@users.route('/register/', methods=['GET', 'POST'])
 def register():
     """This method allows the creation of a new user into the database
 
@@ -26,7 +27,9 @@ def register():
     """
     form = UserForm()
 
+
     #if the method is POST the data contained in the UserForm are sent to the UserManager.register method
+
     if form.is_submitted():
         email = form.data['email']
         password = form.data['password']
@@ -50,7 +53,7 @@ def register():
 
         elif response.status_code == 200:
             # user already exists
-            flash('User already exists!')
+            flash('Mail already used!')
             #TODO controllare perchè non funge
             #form.email.errors.append(email + " is not available, please register with another email.")
             return render_template('register.html', form=form)
@@ -145,7 +148,7 @@ def _modify_personal_data():
 
         return render_template('modify_personal_data.html', form=form)
 
-@login_required
+#@login_required
 @users.route('/profile/password/edit', methods=['GET', 'POST'])
 def _modify_password():
     """
@@ -205,11 +208,24 @@ def _show_profile():
 
         content_filter_form = ContentFilterForm(
             filter_enabled=current_user.content_filter_enabled)
+        """
+        requester_id = current_user.id
 
+        profile_picture = UserManager._get_user_picture(
+            requester_id
+        )
+        
+        arr = bytes(profile_picture, 'utf-8')
+
+        base64_bytes = base64.b64encode(arr)
+        data_bytes = profile_picture.encode("utf-8")
+        img_data = base64.b64encode(data_bytes)
+        """
         # show user informations
         return render_template("user_details.html",
                                user=current_user,
-                               content_filter_form = content_filter_form)
+                               content_filter_form = content_filter_form
+                               )
     else:
         return redirect("/login")
 
@@ -295,33 +311,64 @@ def _users():
 @login_required
 @users.route('/users/<user_id>', methods=['GET'])
 def _get_user(user_id):
-
+   
     requester_id = current_user.id
 
+    if requester_id == int(user_id):
+        return redirect('/profile')
+    
+    #user = User()
     user = UserManager.get_user_by_id(
+        user_id,
         requester_id
     )
 
     block_form = BlockForm(user_id = user.id)
-
-    # render the page
     return render_template('user_details.html', user = user, block_form = block_form)
+    """
+    profile_picture = UserManager._get_user_picture(
+        user_id
+    )
 
+    block_form = BlockForm(user_id = user.id)
+
+    data_bytes = profile_picture.encode("utf-8")
+    base64_bytes = base64.b64encode(data_bytes)
+    # render the page
+    return render_template('user_details.html', user = user, block_form = block_form, profile_picture = base64_bytes)
+    """
 
 @login_required
 @users.route('/users/<user_id>/picture', methods=['GET'])
 def _get_profile_photo(user_id):
-    # checking if there is a logged user, otherwise redirect to login
-    requester_id = current_user.id
+    
+    """
+    id user_id has no profile picture, the MS user will return the default image which will
+    be save sa str(user_id)+"_100.jpeg"
+    """
 
-
-    image100 = UserManager._get_user_picture(
-        requester_id
+    images = UserManager._get_user_picture(
+        int(user_id)
     )
+    image100 = images['image100']
         # rendering the template
         # update result whit template
-    img_data = BytesIO(base64.b64decode(image100))
 
-    #image = img_data.save(byte_io, 'PNG')
-    #TODO transform from bytesio to img
-    return img_data
+    img_data = BytesIO(base64.b64decode(image100))
+    
+    img = Image.open(img_data)
+    img = img.convert('RGB') # in order to support also Alpha transparency images such as PNGs
+    img = img.resize([100, 100], Image.ANTIALIAS)
+    path_to_save = os.path.join(os.getcwd(), 'mib', 'static', 'pictures', str(user_id) + '_100.jpeg')
+    #delete image if it already exists
+    if os.path.exists(path_to_save):
+        os.remove(path_to_save) 
+
+    img.save(path_to_save, "JPEG", quality=100, subsampling=0)
+
+    filename = str(user_id)+ '_100.jpeg'
+    print("filename:")
+    print(filename)
+    return send_from_directory(os.path.join(os.getcwd(), 'mib', 'static', 'pictures'), filename)
+  
+    

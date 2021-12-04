@@ -2,6 +2,7 @@ import base64
 from mib.auth.user import User
 from mib import app
 from flask_login import (logout_user)
+from flask_login import current_user
 from flask import abort
 import requests
 
@@ -9,9 +10,9 @@ import requests
 class UserManager:
     USERS_ENDPOINT = app.config['USERS_MS_URL']
     REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
-
+    
     @classmethod
-    def get_user_by_id(cls, user_id: int) -> User:
+    def get_user_by_id(cls, user_id: int, requester_id: int) -> User:
         """
         This method contacts the users microservice
         and retrieves the user object by user id.
@@ -22,15 +23,17 @@ class UserManager:
             url = "%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id))
             response = requests.get(url,
                                         json={
-                                            'requester_id': user_id,     
+                                            'requester_id': requester_id,     
                                         },
                                         timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
             json_payload = response.json()['user']
-  
+    
+        
             if response.status_code == 200:
                 # user is authenticated
                 user = User.build_from_json(json_payload)
+            
             else:
                 raise RuntimeError('Server has sent an unrecognized status code %s' % response.status_code)
 
@@ -291,13 +294,13 @@ class UserManager:
             json_payload = response.json()
             image = None
             image100 = None
-
+          
             if response.status_code == 200:
                 image = json_payload['image']
                 image100 = json_payload['image_100']
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
-
-        return image100
+       
+        return {"image100":image100, "image":image}
 
