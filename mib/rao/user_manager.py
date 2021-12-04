@@ -241,8 +241,9 @@ class UserManager:
             #TODO check how to handle a list of Users 
 
             #print(response.json()['users'])
+            print(response)
             json_payload = response.json()['users']
-            
+            print(json_payload)
             userlist = []
 
             if response.status_code == 200:
