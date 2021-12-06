@@ -171,9 +171,9 @@ def _modify_password():
         if form.validate_on_submit():
 
             id = current_user.id
-            old_password = form.old_password
-            new_password = form.new_password
-            repeat_new_password = form.repeat_new_password
+            old_password = form.data['old_password']
+            new_password = form.data['new_password']
+            repeat_new_password = form.data['repeat_new_password']
 
             response = UserManager.modify_password(
                 id,
@@ -286,7 +286,7 @@ def _modify_profile_picture():
             str_image = base64.encodebytes(img).decode('utf-8')
 
             id = current_user.id
-
+            
             response = UserManager.modify_profile_picture(
                 id,
                 str_image
@@ -361,23 +361,22 @@ def _get_profile_photo(user_id):
     images = UserManager._get_user_picture(
         int(user_id)
     )
-    image100 = images['image100']
+    image = images['image']
         # rendering the template
         # update result whit template
 
-    img_data = BytesIO(base64.b64decode(image100))
+    img_data = BytesIO(base64.b64decode(image))
     
     img = Image.open(img_data)
     img = img.convert('RGB') # in order to support also Alpha transparency images such as PNGs
-    img = img.resize([100, 100], Image.ANTIALIAS)
-    path_to_save = os.path.join(os.getcwd(), 'mib', 'static', 'pictures', str(user_id) + '_100.jpeg')
+    img = img.resize([256, 256], Image.ANTIALIAS)
+    path_to_save = os.path.join(os.getcwd(), 'mib', 'static', 'pictures', str(user_id) + '.jpeg')
     #delete image if it already exists
     if os.path.exists(path_to_save):
         os.remove(path_to_save) 
 
     img.save(path_to_save, "JPEG", quality=100, subsampling=0)
 
-    filename = str(user_id)+ '_100.jpeg'
-    print("filename:")
-    print(filename)
+    filename = str(user_id)+ '.jpeg'
+  
     return send_from_directory(os.path.join(os.getcwd(), 'mib', 'static', 'pictures'), filename)

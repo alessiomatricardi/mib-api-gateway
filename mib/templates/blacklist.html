@@ -5,25 +5,20 @@
 {% block content %}
 
 <h1>Blacklist</h1>
-
-{% for bl in blacklist: %}
-  {% for user in users: %}
-    {% if user.id == bl.blocked_user_id %}
-        <div class="card mb-3" style="max-width: 540px;">
-          <div class="row g-0">
-            <div class="col-md-8">
-              <div class="card-body">
-                <h5 class="card-title">{{user.firstname}} {{user.lastname}} ({{user.email}})</h5>
-                <form action="/unblock" method="POST">
-                  <input type="hidden" name="user_id" value="{{user.id}}" required>
-                  <input type="submit" value="Unblock user" class="btn btn-success">
-                </form>
-              </div>
-            </div>
+    
+{% for user in blacklist: %}
+    <div class="card mb-3" style="max-width: 540px;">
+      <div class="row g-0">
+        <div class="col-md-8">
+          <div class="card-body">
+            <h5 class="card-title">{{user.firstname}} {{user.lastname}} ({{user.email}})</h5>
+            <form action="/unblock" method="POST">
+              <input type="hidden" name="user_id" value="{{user.id}}" required>
+              <input type="submit" value="Unblock user" class="btn btn-success">
+            </form>
           </div>
         </div>
-    {% endif %}
-  {% endfor %}
+      </div>
+    </div>
 {% endfor %}
-
 {% endblock %}

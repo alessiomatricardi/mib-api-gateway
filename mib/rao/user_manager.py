@@ -5,6 +5,7 @@ from flask_login import logout_user
 
 from flask import abort
 import requests
+import json
 
 USERS_ENDPOINT = app.config['USERS_MS_URL']
 REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
@@ -26,11 +27,12 @@ class UserManager:
             url = "%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id))
             response = requests.get(url,
                                         json={
-                                            'requester_id': requester_id,     
+                                            'requester_id': requester_id,
+                                            'user_id': user_id     
                                         },
                                         timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
-            json_payload = response.json()['user']
+            #json_payload = response.json()['user']
     
 
             if response.status_code == 200:
@@ -124,15 +126,13 @@ class UserManager:
 
         :return: Password updated
         """
+        payload = dict(requester_id=user_id, old_password=old_password, new_password=new_password, repeat_new_password=repeat_new_password)
+        #payload = json.dumps(payload)
+        print(payload)
         try:
             url = "%s/profile/password" % USERS_ENDPOINT
             response = requests.patch(url,
-                                    json={
-                                        'requester_id': user_id,
-                                        'old_password': old_password,
-                                        'new_password': new_password,
-                                        'repeat_new_password': repeat_new_password,
-                                    },
+                                    json=payload,
                                     timeout=REQUESTS_TIMEOUT_SECONDS
                                     )
             return response
@@ -195,7 +195,7 @@ class UserManager:
             )
 
     @classmethod
-    def modify_content_filter(cls, user_id: str, enabled: bool):
+    def modify_content_filter(cls, user_id: int, enabled: bool):
         try:
             url = "%s/profile/content_filter" % USERS_ENDPOINT
             response = requests.patch(url,
@@ -212,7 +212,7 @@ class UserManager:
         return response
 
     @classmethod
-    def modify_profile_picture(cls, user_id: str, image: base64):
+    def modify_profile_picture(cls, user_id: int, image: base64):
         try:
             url = "%s/profile/picture" % USERS_ENDPOINT
             response = requests.put(url,
@@ -229,7 +229,7 @@ class UserManager:
         return response
 
     @classmethod
-    def _get_users_list(cls, user_id: str):
+    def _get_users_list(cls, user_id: int):
         try:
             url = "%s/users" % cls.USERS_ENDPOINT
             response = requests.get(url,
@@ -240,10 +240,9 @@ class UserManager:
                                         )
             #TODO check how to handle a list of Users 
 
-            #print(response.json()['users'])
-            print(response)
+        
             json_payload = response.json()['users']
-            print(json_payload)
+            
             userlist = []
 
             if response.status_code == 200:
