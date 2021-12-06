@@ -89,7 +89,8 @@ class SearchUserForm(FlaskForm):
     )
 
     email = f.StringField(
-        'E-mail'
+        'E-mail',
+        validators=[Email()]
     )
 
     display = ['firstname', 'lastname', 'email']
@@ -168,6 +169,8 @@ class ContentFilterForm(FlaskForm):
 class ProfilePictureForm(FlaskForm):
     image = FileField(validators=[FileRequired('File was empty!')])
 
+
+#TODO spostare in un form apposito per blacklist ??
 class BlockForm(FlaskForm):
     user_id = f.HiddenField(validators=[DataRequired()])
 
