@@ -5,7 +5,6 @@ from flask_login import logout_user
 
 from flask import abort
 import requests
-import json
 
 USERS_ENDPOINT = app.config['USERS_MS_URL']
 REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
@@ -27,12 +26,11 @@ class UserManager:
             url = "%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id))
             response = requests.get(url,
                                         json={
-                                            'requester_id': requester_id,
-                                            'user_id': user_id     
+                                            'requester_id': requester_id,     
                                         },
                                         timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
-            #json_payload = response.json()['user']
+            json_payload = response.json()['user']
     
 
             if response.status_code == 200:
@@ -126,13 +124,15 @@ class UserManager:
 
         :return: Password updated
         """
-        payload = dict(requester_id=user_id, old_password=old_password, new_password=new_password, repeat_new_password=repeat_new_password)
-        #payload = json.dumps(payload)
-        print(payload)
         try:
             url = "%s/profile/password" % USERS_ENDPOINT
             response = requests.patch(url,
-                                    json=payload,
+                                    json={
+                                        'requester_id': user_id,
+                                        'old_password': old_password,
+                                        'new_password': new_password,
+                                        'repeat_new_password': repeat_new_password,
+                                    },
                                     timeout=REQUESTS_TIMEOUT_SECONDS
                                     )
             return response
@@ -195,11 +195,7 @@ class UserManager:
             )
 
     @classmethod
-    def modify_content_filter(cls, user_id: int, enabled: bool):
-        """
-        This method contact the users microservice and enable/disable 
-        the content filter of user_id.
-        """
+    def modify_content_filter(cls, user_id: str, enabled: bool):
         try:
             url = "%s/profile/content_filter" % USERS_ENDPOINT
             response = requests.patch(url,
@@ -216,13 +212,7 @@ class UserManager:
         return response
 
     @classmethod
-    def modify_profile_picture(cls, user_id: int, image: base64):
-        """
-        This method contact the users MS which updates the
-        profile picture of the user.
-        :param user_id: the user whose profile picture will be updated
-        :param image: the new profile picture
-        """
+    def modify_profile_picture(cls, user_id: str, image: base64):
         try:
             url = "%s/profile/picture" % USERS_ENDPOINT
             response = requests.put(url,
@@ -239,11 +229,7 @@ class UserManager:
         return response
 
     @classmethod
-    def _get_users_list(cls, user_id: int):
-        """
-        This method contact the users MS to obtain the 
-        list of the users visible from the user.
-        """
+    def _get_users_list(cls, user_id: str):
         try:
             url = "%s/users" % cls.USERS_ENDPOINT
             response = requests.get(url,
@@ -254,7 +240,7 @@ class UserManager:
                                         )
             #TODO check how to handle a list of Users 
 
-        
+            #print(response.json()['users'])
             json_payload = response.json()['users']
             
             userlist = []
@@ -271,12 +257,6 @@ class UserManager:
 
     @classmethod
     def _get_user_picture(cls, user_id: int):
-        """
-        This method contact the users MS to obtain the
-        profile picture of the user.
-        :return: if it is successufull return the profile picture 
-                in format 100x100 and 256x256
-        """
         try:
             url = "%s/users/%s/picture" % (cls.USERS_ENDPOINT, str(user_id))
             response = requests.get(url,
@@ -298,42 +278,3 @@ class UserManager:
        
         return {"image100":image100, "image":image}
 
-    @classmethod
-    def _search_users(cls, requester_id: int, firstname: str, lastname: str, email: str):
-        """
-        This method contact the MS microservice to obtain a list of users 
-        filtered according to the paramters.
-        
-        """
-        try:
-            url = "%s/users/search" % cls.USERS_ENDPOINT
-            response = requests.get(url,
-                                        json={
-                                            'requester_id': requester_id,
-                                            'firstname': firstname,
-                                            'lastname': lastname,
-                                            'email': email 
-                                        },
-                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
-                                        )
-            status_code = response.status_code
-
-            if status_code in [400, 404]:
-                return None, status_code
-
-            elif status_code == 200:
-                userlist = []
-
-                json_payload = response.json()['users']
-
-                for i in json_payload:
-                    user = User.build_from_json(i)
-                    userlist.append(user)
-
-                return userlist, status_code
-            
-            else:
-                raise RuntimeError('Server has sent an unrecognized status code %s' % response.status_code)
-
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            return abort(500)

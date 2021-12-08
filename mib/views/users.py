@@ -9,7 +9,7 @@ from flask_wtf.form import _is_submitted
 from flask.helpers import send_from_directory
 import os
 from mib.forms import UserForm
-from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm, SearchUserForm
+from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm
 from PIL import Image
 from mib.rao.user_manager import UserManager
 
@@ -95,14 +95,13 @@ def _unregister():
 
             response = UserManager.unregister(current_user.id, password)
 
-            #TODO add flash messages ???
+
             if response.status_code == 404:
                 # if the user is not found, then logout it directly
                 redirect('/logout')
 
             elif response.status_code == 401:
                 # Password is wrong, so user is unauthorized
-
                 return render_template('unregister.html', form=form, user=current_user)
 
             else:
@@ -172,9 +171,9 @@ def _modify_password():
         if form.validate_on_submit():
 
             id = current_user.id
-            old_password = form.data['old_password']
-            new_password = form.data['new_password']
-            repeat_new_password = form.data['repeat_new_password']
+            old_password = form.old_password
+            new_password = form.new_password
+            repeat_new_password = form.repeat_new_password
 
             response = UserManager.modify_password(
                 id,
@@ -215,7 +214,19 @@ def _show_profile():
 
         content_filter_form = ContentFilterForm(
             filter_enabled=current_user.content_filter_enabled)
+        """
+        requester_id = current_user.id
 
+        profile_picture = UserManager._get_user_picture(
+            requester_id
+        )
+        
+        arr = bytes(profile_picture, 'utf-8')
+
+        base64_bytes = base64.b64encode(arr)
+        data_bytes = profile_picture.encode("utf-8")
+        img_data = base64.b64encode(data_bytes)
+        """
         # show user informations
         return render_template("user_details.html",
                                user=current_user,
@@ -275,7 +286,7 @@ def _modify_profile_picture():
             str_image = base64.encodebytes(img).decode('utf-8')
 
             id = current_user.id
-            
+
             response = UserManager.modify_profile_picture(
                 id,
                 str_image
@@ -325,7 +336,18 @@ def _get_user(user_id):
 
     block_form = BlockForm(user_id = user.id)
     return render_template('user_details.html', user = user, block_form = block_form)
+    """
+    profile_picture = UserManager._get_user_picture(
+        user_id
+    )
 
+    block_form = BlockForm(user_id = user.id)
+
+    data_bytes = profile_picture.encode("utf-8")
+    base64_bytes = base64.b64encode(data_bytes)
+    # render the page
+    return render_template('user_details.html', user = user, block_form = block_form, profile_picture = base64_bytes)
+    """
 
 @login_required
 @users.route('/users/<user_id>/picture', methods=['GET'])
@@ -339,60 +361,23 @@ def _get_profile_photo(user_id):
     images = UserManager._get_user_picture(
         int(user_id)
     )
-    image = images['image']
+    image100 = images['image100']
         # rendering the template
         # update result whit template
 
-    img_data = BytesIO(base64.b64decode(image))
+    img_data = BytesIO(base64.b64decode(image100))
     
     img = Image.open(img_data)
     img = img.convert('RGB') # in order to support also Alpha transparency images such as PNGs
-    img = img.resize([256, 256], Image.ANTIALIAS)
-    path_to_save = os.path.join(os.getcwd(), 'mib', 'static', 'pictures', str(user_id) + '.jpeg')
+    img = img.resize([100, 100], Image.ANTIALIAS)
+    path_to_save = os.path.join(os.getcwd(), 'mib', 'static', 'pictures', str(user_id) + '_100.jpeg')
     #delete image if it already exists
     if os.path.exists(path_to_save):
         os.remove(path_to_save) 
 
     img.save(path_to_save, "JPEG", quality=100, subsampling=0)
 
-    filename = str(user_id)+ '.jpeg'
-  
+    filename = str(user_id)+ '_100.jpeg'
+    print("filename:")
+    print(filename)
     return send_from_directory(os.path.join(os.getcwd(), 'mib', 'static', 'pictures'), filename)
-
-@login_required
-@users.route('/users/search', methods=['GET', 'POST'])
-def _search_user():
-    
-    form = SearchUserForm()
-    
-    if request.method == 'GET':
-        return render_template('search_user.html', form=form)
-
-    else:
-
-        form = request.form
-        firstname, lastname, email = form['firstname'], form['lastname'], form['email']
-
-        # if none of the fileds have been compiled
-        if not firstname and not lastname and not email:
-            #TODO check if 400 is a possbile request or can be eliminated
-            flash("Insert at least one field")
-            return redirect('/users/search')
-
-        else:
-            # retrieving the list of users that match with the content of the form
-           
-            users, status_code = UserManager._search_users(
-               current_user.id,
-               firstname,
-               lastname,
-               email
-            )
-
-            if status_code == 400:
-                flash("Bad request, please insert correct parameters")
-                return redirect('/users/search')
-
-            else:
-
-                return render_template("users.html", users=users)
