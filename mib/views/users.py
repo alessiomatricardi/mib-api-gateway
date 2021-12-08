@@ -6,10 +6,10 @@ from flask_login import current_user, logout_user
 
 from flask_login.utils import _get_user
 from flask_wtf.form import _is_submitted
-from flask.helpers import send_from_directory
+from flask.helpers import send_file, send_from_directory
 import os
 from mib.forms import UserForm
-from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm
+from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm, SearchUserForm
 from PIL import Image
 from mib.rao.user_manager import UserManager
 
@@ -112,8 +112,8 @@ def _unregister():
     return render_template('unregister.html', form=form, user=current_user)
 
 
-@login_required
 @users.route('/profile/data/edit', methods=['GET', 'POST'])
+@login_required
 def _modify_personal_data():
     """
     Modify firstname lastname and date of birth of the user.
@@ -154,8 +154,8 @@ def _modify_personal_data():
 
     return render_template('modify_personal_data.html', form=form)
 
-@login_required # TODO SERVE????
 @users.route('/profile/password/edit', methods=['GET', 'POST'])
+@login_required
 def _modify_password():
     """
     Set a new password for the user.
@@ -190,7 +190,7 @@ def _modify_password():
 
             # new password is equal to the old or new and repeated aren't equal
             elif response.status_code == 400:
-                message_to_print = "TODO TODO TODO" # TODO retrieve from response
+                message_to_print =  response.json()['description'] #"The new password is equal to the old or new and repeated aren't equal" 
                 form.new_password.errors.append(
                     message_to_print)
 
@@ -206,37 +206,24 @@ def _modify_password():
     return render_template('modify_password.html', form=form)
 
 @users.route('/profile', methods=['GET'])
+@login_required
 def _show_profile():
     """
     Show the profile of the user.
     """
-    if current_user is not None and hasattr(current_user, 'id'):
 
-        content_filter_form = ContentFilterForm(
-            filter_enabled=current_user.content_filter_enabled)
-        """
-        requester_id = current_user.id
+    content_filter_form = ContentFilterForm(
+        filter_enabled=current_user.content_filter_enabled)
 
-        profile_picture = UserManager._get_user_picture(
-            requester_id
-        )
-        
-        arr = bytes(profile_picture, 'utf-8')
+    # show user informations
+    return render_template("user_details.html",
+                            user=current_user,
+                            content_filter_form = content_filter_form
+                            )
+   
 
-        base64_bytes = base64.b64encode(arr)
-        data_bytes = profile_picture.encode("utf-8")
-        img_data = base64.b64encode(data_bytes)
-        """
-        # show user informations
-        return render_template("user_details.html",
-                               user=current_user,
-                               content_filter_form = content_filter_form
-                               )
-    else:
-        return redirect("/login")
-
-@login_required
 @users.route('/profile/content_filter', methods=['POST'])
+@login_required
 def _content_filter():
     """
     enable/disable the content filter of the user.
@@ -265,8 +252,9 @@ def _content_filter():
         return redirect('/profile')
 
 
-@login_required
+
 @users.route('/profile/picture/edit', methods=['GET','POST'])
+@login_required
 def _modify_profile_picture():
     """
     Set a new profile picture for the user.
@@ -305,22 +293,23 @@ def _modify_profile_picture():
 
     return render_template('modify_picture.html', form=form)
 
-@login_required
 @users.route('/users', methods=['GET'])
+@login_required
 def _users():
     # checking if there is a logged user, otherwise redirect to login
     requester_id = current_user.id
 
 
-    recipients = UserManager._get_users_list(
+    users = UserManager._get_users_list(
         requester_id
     )
-        # rendering the template
-        # update result whit template
-    return render_template("users.html", users=recipients)
+    # rendering the template
+    # update result whit template
+    return render_template("users.html", users=users)
 
-@login_required
+
 @users.route('/users/<user_id>', methods=['GET'])
+@login_required
 def _get_user(user_id):
    
     requester_id = current_user.id
@@ -349,10 +338,9 @@ def _get_user(user_id):
     return render_template('user_details.html', user = user, block_form = block_form, profile_picture = base64_bytes)
     """
 
-@login_required
 @users.route('/users/<user_id>/picture', methods=['GET'])
+@login_required
 def _get_profile_photo(user_id):
-    
     """
     id user_id has no profile picture, the MS user will return the default image which will
     be save sa str(user_id)+"_100.jpeg"
@@ -361,23 +349,47 @@ def _get_profile_photo(user_id):
     images = UserManager._get_user_picture(
         int(user_id)
     )
-    image100 = images['image100']
-        # rendering the template
-        # update result whit template
-
-    img_data = BytesIO(base64.b64decode(image100))
+    image = images['image']
     
-    img = Image.open(img_data)
-    img = img.convert('RGB') # in order to support also Alpha transparency images such as PNGs
-    img = img.resize([100, 100], Image.ANTIALIAS)
-    path_to_save = os.path.join(os.getcwd(), 'mib', 'static', 'pictures', str(user_id) + '_100.jpeg')
-    #delete image if it already exists
-    if os.path.exists(path_to_save):
-        os.remove(path_to_save) 
+    img_data = BytesIO(base64.b64decode(image))
 
-    img.save(path_to_save, "JPEG", quality=100, subsampling=0)
+    return send_file(img_data, mimetype='image/jpeg')
 
-    filename = str(user_id)+ '_100.jpeg'
-    print("filename:")
-    print(filename)
-    return send_from_directory(os.path.join(os.getcwd(), 'mib', 'static', 'pictures'), filename)
+
+@users.route('/users/search', methods=['GET', 'POST'])
+@login_required
+def _search_user():
+    
+    form = SearchUserForm()
+    
+    if request.method == 'GET':
+        return render_template('search_user.html', form=form)
+
+    else:
+
+        form = request.form
+        firstname, lastname, email = form['firstname'], form['lastname'], form['email']
+
+        # if none of the fileds have been compiled
+        if not firstname and not lastname and not email:
+            #TODO check if 400 is a possbile request or can be eliminated
+            flash("Insert at least one field")
+            return redirect('/users/search')
+
+        else:
+            # retrieving the list of users that match with the content of the form
+           
+            users, status_code = UserManager._search_users(
+               current_user.id,
+               firstname,
+               lastname,
+               email
+            )
+
+            if status_code == 400:
+                flash("Bad request, please insert correct parameters")
+                return redirect('/users/search')
+
+            else:
+
+                return render_template("users.html", users=users)

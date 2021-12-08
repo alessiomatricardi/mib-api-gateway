@@ -45,24 +45,7 @@ def _login():
     else:
         return render_template('login.html', form=form)
 
-'''
-TODO work on @login_required or on a similar macro to avoid the code below in every function
-if current_user is not None and hasattr(current_user, 'id'):
-    // do something
 
-instead, we can revert the logic with something like @login_required
-if not current_user.is_authenticated:
-    // you can't perform this action - unauthorized
-
-or, in opposite to the first guard in this comment
-if current_user is None or not hasattr(current_user, 'id'):
-    // you can't perform this action - unauthorized
-
-or, a merge of this 2 methods:
-
-if current_user is None or not current_user.is_authenticated:
-    // you can't perform this action - unauthorized
-'''
 @auth.route("/logout", methods=['GET'])
 @login_required
 def _logout():
