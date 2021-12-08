@@ -23,7 +23,7 @@ def _retrieve_blacklist():
         requester_id
     )
 
-    blacklist = []
+    users = []
     
     #retrieve the user associated to each id in blocked_ids list
     for i in blocked_ids:
@@ -31,10 +31,17 @@ def _retrieve_blacklist():
             i,
             i
         )
-        blacklist.append(user)
+        users.append(user)
 
+    # TODO delete this debuggin prints
+    for el in users: 
+        print("\n\n\n\n\n\n")
+        print(el.id)
+        print(el.firstname)
+        print(el.lastname)
+        print(el.email)
 
-    return render_template('blacklist.html', blacklist = blacklist)
+    return render_template('blacklist.html', blacklist = users)
  
 
 @blacklist.route('/block', methods=['POST'])
