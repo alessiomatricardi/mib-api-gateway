@@ -7,8 +7,8 @@ from flask import abort
 import requests
 import json
 
-USERS_ENDPOINT = app.config['USERS_MS_URL']
-REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
+#USERS_ENDPOINT = app.config['USERS_MS_URL']
+#REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
 
 class UserManager:
 
@@ -59,8 +59,8 @@ class UserManager:
         :return: User obj with email=user_email
         """
         try:
-            response = requests.get("%s/user_email/%s" % (USERS_ENDPOINT, user_email),
-                                    timeout=REQUESTS_TIMEOUT_SECONDS)
+            response = requests.get("%s/user_email/%s" % (cls.USERS_ENDPOINT, user_email),
+                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS)
             json_payload = response.json()
             user = None
 
@@ -78,7 +78,7 @@ class UserManager:
                     firstname: str, lastname: str,
                     birthdate):
         try:
-            url = "%s/register" % USERS_ENDPOINT
+            url = "%s/register" % cls.USERS_ENDPOINT
             response = requests.post(url,
                                      json={
                                          'email': email,
@@ -87,7 +87,7 @@ class UserManager:
                                          'firstname': firstname,
                                          'lastname': lastname,
                                      },
-                                     timeout=REQUESTS_TIMEOUT_SECONDS
+                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                      )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -103,7 +103,7 @@ class UserManager:
         :return: User updated
         """
         try:
-            url = "%s/profile/data" % USERS_ENDPOINT
+            url = "%s/profile/data" % cls.USERS_ENDPOINT
             response = requests.patch(url,
                                     json={
                                         'requester_id': user_id,
@@ -111,7 +111,7 @@ class UserManager:
                                         'lastname': lastname,
                                         'date_of_birth': birthdate,
                                     },
-                                    timeout=REQUESTS_TIMEOUT_SECONDS
+                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                     )
             return response
 
@@ -130,10 +130,10 @@ class UserManager:
         #payload = json.dumps(payload)
         print(payload)
         try:
-            url = "%s/profile/password" % USERS_ENDPOINT
+            url = "%s/profile/password" % cls.USERS_ENDPOINT
             response = requests.patch(url,
                                     json=payload,
-                                    timeout=REQUESTS_TIMEOUT_SECONDS
+                                    timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                     )
             return response
 
@@ -148,13 +148,13 @@ class UserManager:
                     password: str,
                     ):
         try:
-            url = "%s/unregister" % USERS_ENDPOINT
+            url = "%s/unregister" % cls.USERS_ENDPOINT
             response = requests.put(url,
                                      json={
                                          'requester_id': user_id,
                                          'password': password,
                                      },
-                                     timeout=REQUESTS_TIMEOUT_SECONDS
+                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                      )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -172,9 +172,9 @@ class UserManager:
         """
         payload = dict(email=email, password=password)
         try:
-            response = requests.post('%s/login' % USERS_ENDPOINT,
+            response = requests.post('%s/login' % cls.USERS_ENDPOINT,
                                      json=payload,
-                                     timeout=REQUESTS_TIMEOUT_SECONDS
+                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                      )
             json_response = response.json()
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -201,13 +201,13 @@ class UserManager:
         the content filter of user_id.
         """
         try:
-            url = "%s/profile/content_filter" % USERS_ENDPOINT
+            url = "%s/profile/content_filter" % cls.USERS_ENDPOINT
             response = requests.patch(url,
                                         json={
                                             'requester_id': user_id,
                                             'content_filter': enabled,
                                         },
-                                        timeout=REQUESTS_TIMEOUT_SECONDS
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -224,13 +224,13 @@ class UserManager:
         :param image: the new profile picture
         """
         try:
-            url = "%s/profile/picture" % USERS_ENDPOINT
+            url = "%s/profile/picture" % cls.USERS_ENDPOINT
             response = requests.put(url,
                                         json={
                                             'requester_id': user_id,
                                             'image': image,
                                         },
-                                        timeout=REQUESTS_TIMEOUT_SECONDS
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -254,10 +254,10 @@ class UserManager:
                                         )
             #TODO check how to handle a list of Users 
 
-            json_payload = None
             userlist = []
 
             if response.status_code == 200:
+                json_payload = None
                 json_payload = response.json()['users']
                 if json_payload is not None:
                     for i in json_payload:

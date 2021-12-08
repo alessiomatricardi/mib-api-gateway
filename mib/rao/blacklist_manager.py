@@ -3,8 +3,8 @@ from mib import app
 from flask import abort, json
 import requests
 
-BLACKLIST_ENDPOINT = app.config['BLACKLIST_MS_URL']
-REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
+#BLACKLIST_ENDPOINT = app.config['BLACKLIST_MS_URL']
+#REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
 
 class BlacklistManager:
 
@@ -21,13 +21,13 @@ class BlacklistManager:
         :return: 201 if it is successfull
         """
         try:
-            url = "%s/block" % BLACKLIST_ENDPOINT
+            url = "%s/block" % cls.BLACKLIST_ENDPOINT
             response = requests.post(url,
                                         json={
                                             'requester_id': requester_id,
                                             'blocked_user_id': blocked_user_id,
                                         },
-                                        timeout=REQUESTS_TIMEOUT_SECONDS
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -45,13 +45,13 @@ class BlacklistManager:
         :return: 202 if it is successfull
         """
         try:
-            url = "%s/unblock" % BLACKLIST_ENDPOINT
+            url = "%s/unblock" % cls.BLACKLIST_ENDPOINT
             response = requests.delete(url,
                                         json={
                                             'requester_id': requester_id,
                                             'blocked_user_id': blocked_user_id,
                                         },
-                                        timeout=REQUESTS_TIMEOUT_SECONDS
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
