@@ -95,14 +95,13 @@ def _unregister():
 
             response = UserManager.unregister(current_user.id, password)
 
-            #TODO add flash messages ???
+
             if response.status_code == 404:
                 # if the user is not found, then logout it directly
                 redirect('/logout')
 
             elif response.status_code == 401:
                 # Password is wrong, so user is unauthorized
-
                 return render_template('unregister.html', form=form, user=current_user)
 
             else:
@@ -172,9 +171,9 @@ def _modify_password():
         if form.validate_on_submit():
 
             id = current_user.id
-            old_password = form.data['old_password']
-            new_password = form.data['new_password']
-            repeat_new_password = form.data['repeat_new_password']
+            old_password = form.old_password
+            new_password = form.new_password
+            repeat_new_password = form.repeat_new_password
 
             response = UserManager.modify_password(
                 id,
@@ -275,7 +274,7 @@ def _modify_profile_picture():
             str_image = base64.encodebytes(img).decode('utf-8')
 
             id = current_user.id
-            
+
             response = UserManager.modify_profile_picture(
                 id,
                 str_image
@@ -326,7 +325,18 @@ def _get_user(user_id):
 
     block_form = BlockForm(user_id = user.id)
     return render_template('user_details.html', user = user, block_form = block_form)
+    """
+    profile_picture = UserManager._get_user_picture(
+        user_id
+    )
 
+    block_form = BlockForm(user_id = user.id)
+
+    data_bytes = profile_picture.encode("utf-8")
+    base64_bytes = base64.b64encode(data_bytes)
+    # render the page
+    return render_template('user_details.html', user = user, block_form = block_form, profile_picture = base64_bytes)
+    """
 
 @users.route('/users/<user_id>/picture', methods=['GET'])
 @login_required
