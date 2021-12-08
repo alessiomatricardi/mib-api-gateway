@@ -68,6 +68,7 @@ class BlacklistManager:
         """
         try:
             url = "%s/blacklist" % cls.BLACKLIST_ENDPOINT
+
             response = requests.get(url,
                                         json={
                                             'requester_id': requester_id,     
