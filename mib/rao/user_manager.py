@@ -254,15 +254,15 @@ class UserManager:
                                         )
             #TODO check how to handle a list of Users 
 
-        
-            json_payload = response.json()['users']
-            
+            json_payload = None
             userlist = []
 
             if response.status_code == 200:
-                for i in json_payload:
-                    user = User.build_from_json(i)
-                    userlist.append(user)
+                json_payload = response.json()['users']
+                if json_payload is not None:
+                    for i in json_payload:
+                        user = User.build_from_json(i)
+                        userlist.append(user)
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)

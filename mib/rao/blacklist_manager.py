@@ -77,7 +77,6 @@ class BlacklistManager:
 
             if response.status_code == 200:
                 blacklist = response.json()['blacklist']
-                blacklist = json.loads(blacklist)
             
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)

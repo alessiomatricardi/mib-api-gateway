@@ -11,8 +11,8 @@ blacklist = Blueprint('blacklist', __name__)
 
 
 
-@login_required
 @blacklist.route('/blacklist', methods=['GET'])
+@login_required
 def _retrieve_blacklist():
 
     #TODO check error cases
@@ -37,10 +37,8 @@ def _retrieve_blacklist():
     return render_template('blacklist.html', blacklist = blacklist)
  
 
-
-
-@login_required
 @blacklist.route('/block', methods=['POST'])
+@login_required
 def _block_user():
     form = BlockForm()
 
@@ -71,8 +69,9 @@ def _block_user():
         abort(500,'Failure in adding the user to blacklist')
 
 
-@login_required
+
 @blacklist.route('/unblock', methods=['POST'])
+@login_required
 def _unblock_user():
 
 
