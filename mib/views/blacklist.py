@@ -19,7 +19,7 @@ def _retrieve_blacklist():
     requester_id = current_user.id
     
     #retrieves the ids of all the users blocked by the requester
-    blocked_ids = BlacklistManager.retrieving_blacklist(
+    blocked_ids,blocking_ids = BlacklistManager.retrieving_blacklist(
         requester_id
     )
 
