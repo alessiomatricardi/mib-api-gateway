@@ -1,14 +1,14 @@
 from flask import Blueprint, redirect, render_template, abort
 from flask_login import login_required
 from flask_login import current_user
-from mib.forms.user import BlockForm, UnblockForm
+from mib.forms.user import BlockForm
+from mib.forms.others import UnblockForm
 
 from mib.rao.user_manager import UserManager
 from mib.rao.blacklist_manager import BlacklistManager
 
 
 blacklist = Blueprint('blacklist', __name__)
-
 
 
 @blacklist.route('/blacklist', methods=['GET'])
@@ -19,22 +19,16 @@ def _retrieve_blacklist():
     requester_id = current_user.id
     
     #retrieves the ids of all the users blocked by the requester
-    blocked_ids,blocking_ids = BlacklistManager.retrieving_blacklist(
-        requester_id
-    )
+    blocking_ids, blocked_ids = BlacklistManager.retrieving_blacklist(requester_id)
 
-    blacklist = []
+    users = []
     
     #retrieve the user associated to each id in blocked_ids list
     for i in blocked_ids:
-        user = UserManager.get_user_by_id(
-            i,
-            i
-        )
-        blacklist.append(user)
+        user = UserManager.get_user_by_id(i, i)
+        users.append(user)
 
-
-    return render_template('blacklist.html', blacklist = blacklist)
+    return render_template('blacklist.html', blacklist = users)
  
 
 @blacklist.route('/block', methods=['POST'])

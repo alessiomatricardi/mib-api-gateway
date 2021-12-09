@@ -68,6 +68,7 @@ class BlacklistManager:
         """
         try:
             url = "%s/blacklist" % cls.BLACKLIST_ENDPOINT
+
             response = requests.get(url,
                                         json={
                                             'requester_id': requester_id,     
@@ -76,10 +77,10 @@ class BlacklistManager:
                                         )
 
             if response.status_code == 200:
-                blocked = response.json()['blocked']
-                blocking = response.json()['blocking']
+                blocking_ids = response.json()['blocking']
+                blocked_ids = response.json()['blocked']
             
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        return blocked,blocking
+        return blocking_ids, blocked_ids
