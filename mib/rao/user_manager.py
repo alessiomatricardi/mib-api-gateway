@@ -30,13 +30,11 @@ class UserManager:
                                         },
                                         timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
-            json_payload = response.json()['user']
-    
 
             if response.status_code == 200:
-                json_payload = response.json()['user']
-                # user is authenticated
-                user = User.build_from_json(json_payload)
+                json_payload = response.json()
+
+                user = User.build_from_json(json_payload['user'])
             
             else:
                 raise RuntimeError('Server has sent an unrecognized status code %s' % response.status_code)
@@ -59,11 +57,11 @@ class UserManager:
         try:
             response = requests.get("%s/user_email/%s" % (cls.USERS_ENDPOINT, user_email),
                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS)
-            json_payload = response.json()
-            user = None
 
             if response.status_code == 200:
-                user = User.build_from_json(json_payload)
+                json_payload = response.json()
+
+                user = User.build_from_json(json_payload['user'])
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
@@ -140,8 +138,6 @@ class UserManager:
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        raise RuntimeError('Error with searching for the user %s' % user_id)
-
     @classmethod
     def unregister(cls,
                     user_id: int,
@@ -176,7 +172,7 @@ class UserManager:
                                      json=payload,
                                      timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                      )
-            json_response = response.json()
+
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             # We can't connect to Users MS
             return abort(500)
@@ -187,6 +183,8 @@ class UserManager:
         if status_code in [401, 404]:
             return None, status_code
         elif status_code == 200:
+            json_response = response.json()
+
             user = User.build_from_json(json_response['user'])
             return user, status_code
         else:
@@ -240,17 +238,13 @@ class UserManager:
                                         )
             #TODO check how to handle a list of Users 
 
-            #print(response.json()['users'])
-            json_payload = response.json()['users']
-            
             userlist = []
 
             if response.status_code == 200:
-                json_payload = None
-                json_payload = response.json()['users']
-                if json_payload is not None:
-                    for i in json_payload:
-                        user = User.build_from_json(i)
+                users_json = response.json()['users']
+                if users_json is not None:
+                    for user_json in users_json:
+                        user = User.build_from_json(user_json)
                         userlist.append(user)
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -268,16 +262,17 @@ class UserManager:
                                         },
                                         timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                         )
-            json_payload = response.json()
+
             image = None
             image100 = None
           
             if response.status_code == 200:
+                json_payload = response.json()
                 image = json_payload['image']
                 image100 = json_payload['image_100']
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
        
-        return {"image100":image100, "image":image}
+        return {"image100" : image100, "image" : image}
 
