@@ -171,9 +171,9 @@ def _modify_password():
         if form.validate_on_submit():
 
             id = current_user.id
-            old_password = form.old_password
-            new_password = form.new_password
-            repeat_new_password = form.repeat_new_password
+            old_password = form.old_password.data
+            new_password = form.new_password.data
+            repeat_new_password = form.repeat_new_password.data
 
             response = UserManager.modify_password(
                 id,
