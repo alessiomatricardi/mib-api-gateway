@@ -19,27 +19,14 @@ def _retrieve_blacklist():
     requester_id = current_user.id
     
     #retrieves the ids of all the users blocked by the requester
-    blocked_ids,blocking_ids = BlacklistManager.retrieving_blacklist(
-        requester_id
-    )
+    blocking_ids, blocked_ids = BlacklistManager.retrieving_blacklist(requester_id)
 
     users = []
     
     #retrieve the user associated to each id in blocked_ids list
     for i in blocked_ids:
-        user = UserManager.get_user_by_id(
-            i,
-            i
-        )
+        user = UserManager.get_user_by_id(i, i)
         users.append(user)
-
-    # TODO delete this debuggin prints
-    for el in users: 
-        print("\n\n\n\n\n\n")
-        print(el.id)
-        print(el.firstname)
-        print(el.lastname)
-        print(el.email)
 
     return render_template('blacklist.html', blacklist = users)
  
