@@ -42,3 +42,22 @@ class MessageForm(FlaskForm):
     attach_image = FileField(
         validators=[FileAllowed(MESSAGE_IMAGE_ALLOWED_FORMATS, format_message)]
     )
+
+class DraftForm(MessageForm):
+    '''
+    Form which allow users to modify their draft messages
+    '''
+    delete_image = f.BooleanField()
+
+class ReportForm(FlaskForm):
+    '''
+    Form which allows users to report a message
+    '''
+    message_id = f.HiddenField(validators=[DataRequired()])
+
+
+class HideForm(FlaskForm):
+    '''
+    Form which allows users to hide a message
+    '''
+    message_id = f.HiddenField(validators=[DataRequired()])

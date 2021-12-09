@@ -90,8 +90,7 @@ def register_test_blueprints(app):
     :return: None
     """
 
-    from mib.views.utils import utils
-    app.register_blueprint(utils)
+    pass
 
 
 def register_handlers(app):

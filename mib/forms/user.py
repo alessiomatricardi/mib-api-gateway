@@ -173,3 +173,6 @@ class ContentFilterForm(FlaskForm):
 
 class BlockForm(FlaskForm):
     user_id = f.HiddenField(validators=[DataRequired()])
+
+class UnblockForm(FlaskForm):
+    user_id = f.HiddenField(validators=[DataRequired()])

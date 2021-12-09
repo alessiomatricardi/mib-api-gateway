@@ -6,46 +6,47 @@
 
 <h1>{{ label }} Bottlebox</h1>
 
-{% for msg in messages: %}
+{% for message in messages: %}
   <div class="card" style="margin-bottom: 10px;">
-    {% if label == 'Received' and not msg.is_read %}
+    {% if label == 'Received' and not message.is_read %}
       <div class="card-header bg-primary text-white h5">
         New
       </div>
     {% endif %}
     <div class="card-header">
-      Deliver time: {{msg.deliver_time.strftime('%d/%m/%Y at %H:%M')}}
+      Deliver time: {{message.deliver_time.strftime('%d/%m/%Y at %H:%M')}}
     </div>
     <div class="card-header">
-      {% for user in users: %}
-        {% if user.id == msg.sender_id %}
-          From: {{user.firstname}} {{user.lastname}} ({{user.email}})
+      From: 
+      {% if label == 'Received' %}
+        {{message.sender_firstname}} {{message.sender_lastname}} ({{message.sender_email}})
+      {% else %}
+        {{current_user.firstname}} {{current_user.lastname}} ({{current_user.email}})
+      {% endif %}
+    </div>
+    <div class="card-header">
+      To: 
+      {% for recipient in message.recipients: %}
+        {% if label in ['Pending', 'Delivered'] %}
+          {{recipient.firstname}} {{recipient.lastname}} ({{recipient.email}}), 
+        {% else %}
+          {{recipient}}, 
         {% endif %}
       {% endfor %}
     </div>
-    <div class="card-header">
-      To:
-      {% for recipient in msg.recipients: %}
-        {% for user in users: %}
-          {% if user.id == recipient.recipient_id %}
-            {{user.firstname}} {{user.lastname}} ({{user.email}}),
-          {% endif %}
-        {% endfor %}
-      {% endfor %}
-    </div>
     <div class="card-body">
-      <p class="card-text">{{msg.content}}</p>
+      <p class="card-text">{{message.content}}</p>
       {% if label == 'Pending' %}
-        <a href="/messages/pending/{{msg.id}}" class="btn btn-primary">Open</a>
+        <a href="/messages/pending/{{message.id}}" class="btn btn-primary">Open</a>
       
       {% elif label == 'Received' %}
-        <a href="/messages/received/{{msg.id}}" class="btn btn-primary">Open</a>
+        <a href="/messages/received/{{message.id}}" class="btn btn-primary">Open</a>
       
       {% elif label == 'Delivered' %}
-        <a href="/messages/delivered/{{msg.id}}" class="btn btn-primary">Open</a>
+        <a href="/messages/delivered/{{message.id}}" class="btn btn-primary">Open</a>
       
       {% elif label == 'Drafts' %}
-        <a href="/messages/draft/{{msg.id}}" class="btn btn-primary">Modify message</a>
+        <a href="/messages/drafts/{{message.id}}" class="btn btn-primary">Modify message</a>
       
       {% endif %}
     </div>

@@ -3,8 +3,6 @@ from mib import app
 from flask import abort, json
 import requests
 
-#BLACKLIST_ENDPOINT = app.config['BLACKLIST_MS_URL']
-#REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
 
 class BlacklistManager:
 

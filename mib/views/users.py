@@ -154,6 +154,7 @@ def _modify_personal_data():
 
     return render_template('modify_personal_data.html', form=form)
 
+
 @users.route('/profile/password/edit', methods=['GET', 'POST'])
 @login_required
 def _modify_password():
@@ -205,6 +206,7 @@ def _modify_password():
 
     return render_template('modify_password.html', form=form)
 
+
 @users.route('/profile', methods=['GET'])
 @login_required
 def _show_profile():
@@ -252,7 +254,6 @@ def _content_filter():
         return redirect('/profile')
 
 
-
 @users.route('/profile/picture/edit', methods=['GET','POST'])
 @login_required
 def _modify_profile_picture():
@@ -292,6 +293,7 @@ def _modify_profile_picture():
                 return redirect('/profile')
 
     return render_template('modify_picture.html', form=form)
+
 
 @users.route('/users', methods=['GET'])
 @login_required

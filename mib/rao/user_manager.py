@@ -6,9 +6,6 @@ from flask_login import logout_user
 from flask import abort
 import requests
 
-#USERS_ENDPOINT = app.config['USERS_MS_URL']
-#REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
-
 class UserManager:
 
     USERS_ENDPOINT = app.config['USERS_MS_URL']

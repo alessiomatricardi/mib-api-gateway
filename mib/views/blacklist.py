@@ -2,7 +2,7 @@ from flask import Blueprint, redirect, render_template, abort
 from flask_login import login_required
 from flask_login import current_user
 from mib.forms.user import BlockForm
-from mib.forms.others import UnblockForm
+from mib.forms.user import UnblockForm
 
 from mib.rao.user_manager import UserManager
 from mib.rao.blacklist_manager import BlacklistManager

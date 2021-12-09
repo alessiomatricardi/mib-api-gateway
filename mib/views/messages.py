@@ -1,160 +1,103 @@
-import base64
-import os
-import requests
 import datetime
-
-from flask                      import Blueprint, redirect, render_template, flash, abort, request
-from flask_login                import login_required, current_user, logout_user
-
-from flask_login.utils          import _get_user
-from flask_wtf.form             import _is_submitted
-from flask.helpers              import send_from_directory
-
-from werkzeug.utils             import secure_filename
-
-from PIL                        import Image
-
-from mib.forms.message          import MessageForm, MultiCheckboxField
-from mib.rao.user_manager       import UserManager
-from mib.rao.messages_manager   import MessageManager
-from io                         import BytesIO
+from flask import Blueprint, redirect, render_template, flash, request
+from flask_login import login_required, current_user
+from PIL import Image
+from mib.forms.message import MessageForm
+from mib.rao.user_manager import UserManager
+from mib.rao.messages_manager import MessageManager
+from mib.rao.messages import PendingDeliveredMessage, ReceivedMessage, Recipient
 
 messages = Blueprint('messages', __name__)
 
 
-@login_required
 @messages.route('/messages', methods=['GET', 'POST'])
-def new_message():
+@login_required
+def _new_message():
     """
     This method allows to create and handle a new message
     """
 
+    form = MessageForm()
+
     if request.method == 'GET':
         """
-        body get
+        GET request arguments
         {
-            'forward'   : bool,
-            'draft'     : bool,
-            'reply'     : bool,
-            'write_to'  : string, #i want to put here an email
-            'label'     : string,
-            'message_id': int
+            In case of a forward message:
+            'forward'   : bool, Is this message a forwarded message?
+            'label'     : string, The forwarded message is a received or delivered message?
+            'message_id': int, message to forward
+
+            OR
+
+            In general
+            'write_to : string, 
          }
         """
-        data = request.get_json() # request's body
-        form = MessageForm() # new blank form
-
-        recipients_list         = UserManager._get_users_list(current_user.id)
-        form.recipients.choices = recipients_list
-
-        message_id      = int(request.args.get('message_id'))
-        is_forward      = int(request.args.get('forward'))
-        is_draft        = int(request.args.get('draft'))
-        is_reply        = int(request.args.get('reply'))
-        label           = request.args.get('label')
-        write_to        = request.args.get('write_to')
-
+        message_id = None
+        is_forward = False
+        label = ''
+        write_to = ''
         
-        single_recipient    = ''
-        message_json        = {}
+        try:
+            write_to = request.args.get('write_to')
+        except:
+            pass
 
-        if is_forward or is_draft or is_reply:
-            # message request
-            message_json = MessageManager.get_message_details(current_user.id, message_id, label)
-            if message_json is None:
-                abort(404) #TODO fai robe
+        try:
+            message_id = int(request.args.get('message_id'))
+            is_forward = int(request.args.get('forward')) == 1
+            label = request.args.get('label')
+        except:
+            pass
 
-        if is_forward:
+        # retrieve users list
+        recipients_list = UserManager._get_users_list(current_user.id)
+
+        # TODO CHECKS SU STA GET
+
+        recipient_emails = [(user.email, user.email) for user in recipients_list]
+        
+        form.recipients.choices = recipient_emails
+
+        single_recipient = ''
+        new_message_content = ''
+
+        # if the message is a forward message, get the original one
+        if is_forward and message_id is not None and label in ['received', 'delivered']:
             
+            message, status_code = MessageManager.get_message_details(current_user.id, message_id, label)
+
+            # redirect the user to /messages without content
+            if status_code != 200:
+                form.content.errors.append("An error occours during message retrievement")
+                
+                return render_template('new_message.html', form = form, single_recipient = single_recipient)
+
             if label == 'delivered':
-                """
-                is returned 
-                {
-                    'content' : string,
-                    'recipients' : 
-                        {
-                            'email'                 : string, 
-                            'id'                    : int,
-                            'firstname,lastname'    : string,
-                            'is_in_blacklist'       : bool
-                        }
-                }
-                """
-
                 recipients_list = ""
+                message : PendingDeliveredMessage
+                user : Recipient
 
-                for user in message_json['recipients']:
-                    recipients_list = recipients_list + user['firstname'] + " " + user['firstname'] + "\n"
+                for user in message.recipients:
+                    recipients_list = recipients_list + "%s %s (%s)\n", (user.firstname, user.lastname, user.email)
                 
-                new_message_content = "Sent by me\nto " + recipients_list + "\"" + message_json['content'] + "\"\n" 
-                
-            if label == 'received': 
-                """
-                is returned
-                {
-                    'sender_firstname'          : string,
-                    'sender_lastname'           : string,
-                    'sender_email'              : string,
-                    'is_sender_in_blacklist'    : bool,
-                    'is_read'                   : int,
-                    'content'                   : string,
-                    'is_reported'               : int
-                }
-                """
-                new_message_content = "Received by me from " + message_json['sender_firstname'] + " " + message_json['sender_lastname'] + ":\n\"" + message_json['content'] + "\""           
-
-
-            form.recipients.check()  
-
-
-        if is_draft:
-            """
-            is returned
-            {
-                'id'            : int,
-                'sender_id'     : int, 
-                'content',      : int,
-                'deliver_time'  : datetime, 
-                'image'         : int,
-                'recipients'    : email list
-            }
-            """
-            form.content        = message_json['content']
-            form.deliver_time   = message_json['deliver_time']
+                new_message_content = "Sent by me to\n" + recipients_list + "\n\n" + message.content + "\"\n"
             
-            single_recipient    = message_json['recipients'][0] # TODO single recipients
-                                                                # deve essere una lista in modo che 
-                                                                # nel template 
-                                                                # vengano spuntate tutte le mail 
-                                                                # presenti in questa lista
+            else:
+                # label = 'received'
+                message : ReceivedMessage
 
-        if is_reply:
-            """
-            is returned
-            {
-                'sender_firstname'          : string,
-                'sender_lastname'           : string,
-                'sender_email'              : string,
-                'is_sender_in_blacklist'    : bool,
-                'is_read'                   : int,
-                'content'                   : string,
-                'is_reported'               : int
-            }
-            """
-            single_recipient = message_json['sender_email'][0]
-        
-        if write_to:
+                new_message_content = "Received by me from %s %s (%s)\n", (message.sender_firstname, message.sender_lastname, message.sender_email)\
+                     + "\n\n" + message.content + "\"\n"
+
+        # if it is a reply message, set the sender as the unique recipient
+        elif write_to != '':
             single_recipient = write_to
-
-
-        # passing list of recipients to the form
-        email_list = []
-        for user in UserManager._get_users_list(current_user.id):
-            email_list.append((user.email,user.email))
-        form.recipients.choices = email_list
-        #####
         
-        return render_template('new_message.html', form=form, single_recipient=single_recipient)
+        form.content.data = new_message_content
+        
+        return render_template('new_message.html', form = form, single_recipient = single_recipient)
 
     elif request.method == 'POST':
 
@@ -179,23 +122,41 @@ def new_message():
             file        = request.files['attach_image']
             file_name   = request.files['attach_image'].filename
 
-            # checks on the given file
-            if MessageManager.validate_file(file): 
-
-                #converts the given file in base64
-                imageb64 = MessageManager.convert_image(file)
-
-            else:
-                flash('Insert an image with extention: .png , .jpg, .jpeg, .gif')
-                return redirect('/messages')
+            #converts the given file in base64
+            imageb64 = MessageManager.convert_image(file)
         
-        
-        MessageManager.send_message(current_user.id, str(deliver_time), form['content'], form.getlist('recipients'), (form['submit'] == 'Save draft'), imageb64, file_name)
+        MessageManager.send_message(
+            current_user.id,
+            str(deliver_time),
+            form['content'],
+            form.getlist('recipients'),
+            (form['submit'] == 'Save draft'),
+            imageb64,
+            file_name
+        )
 
         return render_template("index.html") 
           
     else:
         raise RuntimeError('This should not happen!')
 
+@messages.route('/hide', methods=['POST'])
+@login_required
+def _hide_message():
+    pass
 
+@messages.route('/report', methods=['POST'])
+@login_required
+def _report_message():
+    pass
+
+@messages.route('/messages/<label>/<message_id>/attachment', methods=['GET'])
+@login_required
+def _get_attachment():
+    pass
+
+@messages.route('/messages/<label>/<message_id>/remove', methods=['GET'])
+@login_required
+def _delete_message():
+    pass
 

@@ -17,7 +17,7 @@
         <div class="card-body">
           <h5 class="card-title">{{user.firstname}} {{user.lastname}} ({{user.email}})</h5>
           <a href="/users/{{ user.id }}" class="btn btn-success">See profile</a>
-          <a href="/messages/new?single_recipient={{user.email}}" class="btn btn-primary">Write to</a>
+          <a href="/messages/?write_to={{user.email}}" class="btn btn-primary">Write to</a>
         </div>
       </div>
     </div>

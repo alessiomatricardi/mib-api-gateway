@@ -41,7 +41,7 @@
 
   {% else %}
 
-  <a href="/messages/new?single_recipient={{user.email}}" class="btn btn-lg btn-primary fw-bold">Write a message</a>
+  <a href="/messages?write_to={{user.email}}" class="btn btn-lg btn-primary fw-bold">Write a message</a>
   <br><br>
   <form action="/block" method="POST">
     {{ block_form.hidden_tag() }}

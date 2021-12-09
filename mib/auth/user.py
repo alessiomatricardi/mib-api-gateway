@@ -21,7 +21,7 @@ class User(UserMixin):
     is_anonymous = False
     extra_data = None
 
-    # A list of fields to be serialized TODO CONTROLLARE
+    # A list of fields to be serialized
     SERIALIZE_LIST = ['id', 'email', 'is_active', 'firstname','lastname','date_of_birth','lottery_points','has_picture','content_filter_enabled']
 
     @staticmethod

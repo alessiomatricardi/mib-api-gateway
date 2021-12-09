@@ -64,9 +64,15 @@
 
     <div class="mb-3">
 
-      {% if attachment != '' %}
+      {% if message.image != '' %}
         <p>Your attachment</p>
-        <img src="/messages/{{message_id}}/attachments/{{attachment}}" class = "img-fluid rounded">
+        
+        <img src="/messages/drafts/{{message_id}}/attachment" class = "img-fluid rounded">
+
+        <p>Delete this attachment</p>
+        <div class="form-check form-switch form-switch-lg">
+          {{ form.delete_image(class="form-check-input") }}
+        </div>
 
         <p class="mt-3 mb-3 text-center">Send another image</p>
       {% else %}
