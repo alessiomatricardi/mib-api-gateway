@@ -26,7 +26,7 @@ class MessageForm(FlaskForm):
     recipients = MultiCheckboxField(
         'Recipients', 
         choices=[]
-    ) # TODO write javascript script that set/remove the required attribute from the checkist
+    )
     
     content = f.TextAreaField(
         'Content', 

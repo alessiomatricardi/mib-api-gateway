@@ -111,8 +111,8 @@ def _show_draft_message(message_id):
         form.content.data = message.content
 
         # retrieve users
-        #TODO users, status_code = UserManager._get_users_list(current_user.id)
-        users = UserManager._get_users_list(current_user.id)
+        #TODO users, status_code = UserManager.get_users_list(current_user.id)
+        users = UserManager.get_users_list(current_user.id)
 
         #if status_code != 200:
         #    abort(status_code)

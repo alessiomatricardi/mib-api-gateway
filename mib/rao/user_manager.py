@@ -224,7 +224,7 @@ class UserManager:
         return response
 
     @classmethod
-    def _get_users_list(cls, user_id: str):
+    def get_users_list(cls, user_id: str):
         try:
             url = "%s/users" % cls.USERS_ENDPOINT
             response = requests.get(url,
@@ -250,7 +250,7 @@ class UserManager:
         return userlist
 
     @classmethod
-    def _get_user_picture(cls, user_id: int):
+    def get_user_picture(cls, user_id: int):
         try:
             url = "%s/users/%s/picture" % (cls.USERS_ENDPOINT, str(user_id))
             response = requests.get(url,

@@ -4,9 +4,7 @@ from flask import Blueprint, redirect, render_template, flash, abort, request
 from flask_login import login_required
 from flask_login import current_user, logout_user
 
-from flask_login.utils import _get_user
-from flask_wtf.form import _is_submitted
-from flask.helpers import send_file, send_from_directory
+from flask.helpers import send_file
 import os
 from mib.forms import UserForm
 from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ModifyPictureForm, BlockForm, SearchUserForm
@@ -302,7 +300,7 @@ def _users():
     requester_id = current_user.id
 
 
-    users = UserManager._get_users_list(
+    users = UserManager.get_users_list(
         requester_id
     )
     # rendering the template
@@ -312,7 +310,7 @@ def _users():
 
 @users.route('/users/<user_id>', methods=['GET'])
 @login_required
-def _get_user(user_id):
+def get_user(user_id):
    
     requester_id = current_user.id
 
@@ -328,7 +326,7 @@ def _get_user(user_id):
     block_form = BlockForm(user_id = user.id)
     return render_template('user_details.html', user = user, block_form = block_form)
     """
-    profile_picture = UserManager._get_user_picture(
+    profile_picture = UserManager.get_user_picture(
         user_id
     )
 
@@ -348,7 +346,7 @@ def _get_profile_photo(user_id):
     be save sa str(user_id)+"_100.jpeg"
     """
 
-    images = UserManager._get_user_picture(
+    images = UserManager.get_user_picture(
         int(user_id)
     )
     image = images['image']

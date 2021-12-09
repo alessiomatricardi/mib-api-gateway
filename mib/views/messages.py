@@ -52,7 +52,7 @@ def _new_message():
             pass
 
         # retrieve users list
-        recipients_list = UserManager._get_users_list(current_user.id)
+        recipients_list = UserManager.get_users_list(current_user.id)
 
         # TODO CHECKS SU STA GET
 
