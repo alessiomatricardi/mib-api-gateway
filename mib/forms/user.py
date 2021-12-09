@@ -2,9 +2,12 @@ import wtforms as f
 from flask_wtf import FlaskForm
 from wtforms.fields.html5 import DateField, EmailField
 from wtforms.validators import DataRequired, Email, Length
-from flask_wtf.file import FileRequired, FileField
+from flask_wtf.file import FileRequired, FileField, FileAllowed
 
 from mib.validators.age import AgeValidator
+
+PROFILE_IMAGE_ALLOWED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'PNG', 'JPG', 'JPEG', 'GIF']
+format_message = "Image allowed formats are PNG, JPEG and GIF"
 
 class UserForm(FlaskForm):
     """
@@ -72,7 +75,10 @@ class ModifyPictureForm(FlaskForm):
     """
 
     image = FileField(
-        validators=[FileRequired('File cannot be empty!')]
+        validators=[
+            FileRequired('File cannot be empty!'),
+            FileAllowed(PROFILE_IMAGE_ALLOWED_FORMATS, format_message)
+        ]
     )
 
 class SearchUserForm(FlaskForm):
@@ -164,9 +170,6 @@ class ContentFilterForm(FlaskForm):
     TODO COMMENTARE
     '''
     filter_enabled = f.BooleanField()
-
-class ProfilePictureForm(FlaskForm):
-    image = FileField(validators=[FileRequired('File was empty!')])
 
 class BlockForm(FlaskForm):
     user_id = f.HiddenField(validators=[DataRequired()])

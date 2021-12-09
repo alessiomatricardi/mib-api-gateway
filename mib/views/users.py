@@ -9,7 +9,7 @@ from flask_wtf.form import _is_submitted
 from flask.helpers import send_file, send_from_directory
 import os
 from mib.forms import UserForm
-from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ProfilePictureForm, BlockForm, SearchUserForm
+from mib.forms.user import UnregisterForm, ModifyPersonalDataForm, ModifyPasswordForm, ContentFilterForm, ModifyPictureForm, BlockForm, SearchUserForm
 from PIL import Image
 from mib.rao.user_manager import UserManager
 
@@ -263,7 +263,7 @@ def _modify_profile_picture():
     Returns:
         If the operation is successfull returns the view of the profile.
     """
-    form = ProfilePictureForm()
+    form = ModifyPictureForm()
 
     if request.method == 'POST':
 

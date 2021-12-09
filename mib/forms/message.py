@@ -1,7 +1,10 @@
 import wtforms as f
 from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired
-from flask_wtf.file import FileField
+from flask_wtf.file import FileAllowed, FileField
+
+MESSAGE_IMAGE_ALLOWED_FORMATS = ['png', 'jpg', 'jpeg', 'gif', 'PNG', 'JPG', 'JPEG', 'GIF']
+format_message = "Image allowed formats are PNG, JPEG and GIF"
 
 
 class MultiCheckboxField(f.SelectMultipleField):
@@ -36,4 +39,6 @@ class MessageForm(FlaskForm):
         render_kw={'type': 'datetime-local'}
     )
     
-    attach_image = FileField()
+    attach_image = FileField(
+        validators=[FileAllowed(MESSAGE_IMAGE_ALLOWED_FORMATS, format_message)]
+    )
