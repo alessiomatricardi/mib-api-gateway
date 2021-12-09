@@ -58,7 +58,7 @@ class BlacklistManager:
         return response
 
     @classmethod
-    def retrieving_blacklist(cls, requester_id: int):
+    def get_blacklist(cls, requester_id: int):
         """
         This method contact the blacklist microservice and 
         retrieves the blacklist of the requesting user.

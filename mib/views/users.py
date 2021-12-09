@@ -16,7 +16,7 @@ users = Blueprint('users', __name__)
 
 
 @users.route('/register', methods=['GET', 'POST'])
-def register():
+def _register():
     """This method allows the creation of a new user into the database
 
 
@@ -25,7 +25,6 @@ def register():
     """
 
     # if the user is already logged in, redirect him to homepage
-    #TODO usare @login_required per controllare se un utente è loggato
     if current_user is not None and hasattr(current_user, 'id'):
         return redirect('/')
 
@@ -33,16 +32,17 @@ def register():
 
     #if the method is POST the data contained in the UserForm are sent to the UserManager.register method
 
-    if form.is_submitted():
-        email = form.data['email']
-        password = form.data['password']
-        firstname = form.data['firstname']
-        lastname = form.data['lastname']
-        date_of_birth = form.data['date_of_birth']
+    if form.validate_on_submit():
+        
+        email = form.email.data
+        password = form.password.data
+        firstname = form.firstname.data
+        lastname = form.lastname.data
+        date_of_birth = form.date_of_birth.data
         date = date_of_birth.strftime('%Y-%m-%d')
         
         #the register method will send the request to the microservice User 
-        response = UserManager.register(
+        status_code = UserManager.register(
             email,
             password,
             firstname,
@@ -50,30 +50,24 @@ def register():
             date,
         )
 
-        if response.status_code == 201:
+        if status_code == 201:
             # in this case the request is ok!
             return redirect('/')
 
-        elif response.status_code == 200:
+        elif status_code == 200:
             # user already exists
-            flash('Mail already used!')
-            #TODO controllare perchè non funge
-            #form.email.errors.append(email + " is not available, please register with another email.")
+            form.email.errors.append(email + " is not available, please register with another email.")
             return render_template('register.html', form=form)
+        
         else:
             flash('Unexpected response from users microservice!')
             return render_template('register.html', form=form)
-    else:
-        for fieldName, errorMessages in form.errors.items():
-            for errorMessage in errorMessages:
-                flash('The field %s is incorrect: %s' % (fieldName, errorMessage))
-
 
     return render_template('register.html', form=form)
 
 
 @users.route('/unregister', methods=['GET', 'POST'])
-@login_required #TODO otherwise redirect to login, how?
+@login_required
 def _unregister():
     """
     Set an account as unregistered.
@@ -89,17 +83,18 @@ def _unregister():
 
         if form.validate_on_submit():
 
-            password = form.data['password']
+            password = form.password.data
 
-            response = UserManager.unregister(current_user.id, password)
+            status_code = UserManager.unregister(current_user.id, password)
 
 
-            if response.status_code == 404:
+            if status_code == 404:
                 # if the user is not found, then logout it directly
                 redirect('/logout')
 
-            elif response.status_code == 401:
+            elif status_code == 401:
                 # Password is wrong, so user is unauthorized
+                form.password.errors.append("Password is wrong.")
                 return render_template('unregister.html', form=form, user=current_user)
 
             else:
@@ -127,20 +122,20 @@ def _modify_personal_data():
         if form.validate_on_submit():
 
             id = current_user.id
-            firstname = form.data['firstname']
-            lastname = form.data['lastname']
-            date_of_birth = form.data['date_of_birth']
+            firstname = form.firstname.data
+            lastname = form.lastname.data
+            date_of_birth = form.date_of_birth.data
             birthdate = date_of_birth.strftime("%Y-%m-%d")
 
-            response = UserManager.modify_data(id, firstname, lastname,
+            status_code = UserManager.modify_data(id, firstname, lastname,
                                                birthdate)
 
             # if user data are correctly modified
-            if response.status_code == 200:
+            if status_code == 200:
                 return redirect('/profile')
 
             # something went wrong
-            # TODO si può stampare qualcosa?
+            flash('Something went wrong during profile modification')
 
             return render_template('modify_personal_data.html', form=form)
 
@@ -189,11 +184,10 @@ def _modify_password():
 
             # new password is equal to the old or new and repeated aren't equal
             elif response.status_code == 400:
-                message_to_print =  response.json()['description'] #"The new password is equal to the old or new and repeated aren't equal" 
+                message_to_print =  response.json()['description']
                 form.new_password.errors.append(
                     message_to_print)
 
-            #TODO check if it is necessary after @login_required fix
             elif response.status_code == 404:
                 return redirect('/logout')
 
@@ -213,13 +207,15 @@ def _show_profile():
     """
 
     content_filter_form = ContentFilterForm(
-        filter_enabled=current_user.content_filter_enabled)
+        filter_enabled=current_user.content_filter_enabled
+    )
 
     # show user informations
-    return render_template("user_details.html",
-                            user=current_user,
-                            content_filter_form = content_filter_form
-                            )
+    return render_template(
+        "user_details.html",
+        user = current_user,
+        content_filter_form = content_filter_form
+    )
    
 
 @users.route('/profile/content_filter', methods=['POST'])
@@ -245,11 +241,10 @@ def _content_filter():
             return redirect('/logout')
 
         else:
-            # TODO SHOW SOMETHING?
+            
             return redirect('/profile')
-    else:
 
-        return redirect('/profile')
+    return redirect('/profile')
 
 
 @users.route('/profile/picture/edit', methods=['GET','POST'])
@@ -266,7 +261,8 @@ def _modify_profile_picture():
 
     if request.method == 'POST':
 
-        if form.validate_on_submit(): # TODO VALIDATE IMAGES
+        if form.validate_on_submit():
+
             data = form.data['image']
 
             img = data.stream.read()
@@ -285,7 +281,6 @@ def _modify_profile_picture():
             elif response.status_code == 500:
 
                 abort(500)
-                #TODO possiamo gestirlo meglio? magari dicendo qualcosa all'utente
             else:
 
                 return redirect('/profile')
@@ -300,9 +295,11 @@ def _users():
     requester_id = current_user.id
 
 
-    users = UserManager.get_users_list(
-        requester_id
-    )
+    users, status_code = UserManager.get_users_list(requester_id)
+
+    if status_code != 200:
+        abort(status_code)
+
     # rendering the template
     # update result whit template
     return render_template("users.html", users=users)
@@ -318,25 +315,14 @@ def get_user(user_id):
         return redirect('/profile')
     
     #user = User()
-    user = UserManager.get_user_by_id(
-        user_id,
-        requester_id
-    )
+    user, status_code = UserManager.get_user_by_id(user_id, requester_id)
+
+    if status_code != 200:
+        abort(status_code)
 
     block_form = BlockForm(user_id = user.id)
     return render_template('user_details.html', user = user, block_form = block_form)
-    """
-    profile_picture = UserManager.get_user_picture(
-        user_id
-    )
 
-    block_form = BlockForm(user_id = user.id)
-
-    data_bytes = profile_picture.encode("utf-8")
-    base64_bytes = base64.b64encode(data_bytes)
-    # render the page
-    return render_template('user_details.html', user = user, block_form = block_form, profile_picture = base64_bytes)
-    """
 
 @users.route('/users/<user_id>/picture', methods=['GET'])
 @login_required
@@ -349,7 +335,12 @@ def _get_profile_photo(user_id):
     images = UserManager.get_user_picture(
         int(user_id)
     )
-    image = images['image']
+
+    dimension = request.args.get('dim')
+    if dimension is not None and dimension == 'small':
+        image = images['image100']
+    else:
+        image = images['image']
     
     img_data = BytesIO(base64.b64decode(image))
 
@@ -372,7 +363,6 @@ def _search_user():
 
         # if none of the fileds have been compiled
         if not firstname and not lastname and not email:
-            #TODO check if 400 is a possbile request or can be eliminated
             flash("Insert at least one field")
             return redirect('/users/search')
 

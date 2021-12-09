@@ -1,48 +1,74 @@
-'''
-from flask import Blueprint, redirect, render_template, request, abort
-from monolith.database import db, User, Message
+from flask import Blueprint, render_template, abort
+from flask_login.utils import login_required
 from flask_login import current_user
-from monolith.calendar_logic import CalendatLogic
+from mib.rao.messages_manager import MessageManager
+import json
 
 calendar = Blueprint('calendar', __name__)
 
 
 @calendar.route('/calendar',methods=['GET'])
+@login_required
 def _which_calendar():
-    # if the user is not logged, the login page is rendered
-    if current_user is not None and hasattr(current_user, 'id'):
-        return render_template('which_calendar.html') 
-        # render a page in which it is possible to chose which calendar the user wants to render
-    else:
-        return redirect('/login')
+    return render_template('which_calendar.html')
 
 
 @calendar.route('/calendar/sent',methods=['GET'])
+@login_required
 def _show_calendar_of_sent_messages():
-    # if the user is not logged, the login page is rendered
-    if current_user is not None and hasattr(current_user, 'id'):
+    
+    pending_messages, status_code = MessageManager.get_bottlebox(current_user.id, 'pending')
+
+    delivered_messages, status_code2 = MessageManager.get_bottlebox(current_user.id, 'delivered')
+
+    if status_code != 200 or status_code2 != 200:
+        abort(status_code)
+    
+    sent = []
+    for message in pending_messages:
+        for recipient in message.recipients:
+            message_json = {
+                "id" : message.id,
+                "deliver_time" : message.deliver_time.strftime('%Y-%m-%dT%H:%M'),
+                "title" : "Message to %s %s (%s)" % (recipient.firstname, recipient.lastname, recipient.email),
+                "type" : 'pending'
+            }
         
-        cl = CalendatLogic()
+            sent.append(message_json)
+    
+    for message in delivered_messages:
+        for recipient in message.recipients:
+            message_json = {
+                "id" : message.id,
+                "deliver_time" : message.deliver_time.strftime('%Y-%m-%dT%H:%M'),
+                "title" : "Message to %s %s (%s)" % (recipient.firstname, recipient.lastname, recipient.email),
+                "type" : 'delivered'
+            }
+        
+            sent.append(message_json)
 
-        # get list of sent messages converted in JSON format
-        messages = cl.get_list_of_sent_messages(current_user.id)
+    return render_template('calendar.html', messages = sent)
 
-        return render_template('calendar.html', messages=messages)
-    else:
-        return redirect('/login')
 
 
 @calendar.route('/calendar/received',methods=['GET'])
+@login_required
 def _show_calendar_of_received_messages():
-    # if the user is not logged, the login page is rendered
-    if current_user is not None and hasattr(current_user, 'id'):
+    
+    received_messages, status_code = MessageManager.get_bottlebox(current_user.id, 'received')
+
+    if status_code != 200:
+        abort(status_code)
+
+    received = []
+    for message in received_messages:
+        message_json = {
+            "id" : message.id,
+            "deliver_time" : message.deliver_time.strftime('%Y-%m-%dT%H:%M'),
+            "title" : "Message from %s %s (%s)" % (message.sender_firstname, message.sender_lastname, message.sender_email),
+            "type" : 'received'
+        }
         
-        cl = CalendatLogic()
+        received.append(message_json)
 
-        # get list of received messages converted in JSON format
-        messages = cl.get_list_of_received_messages(current_user.id)
-
-        return render_template('calendar.html', messages=messages)
-    else:
-        return redirect('/login')
-'''
+    return render_template('calendar.html', messages = received)

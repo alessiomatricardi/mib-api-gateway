@@ -61,13 +61,15 @@ class ReceivedMessage(Message):
     
     is_read = False
     is_reported = False
+    is_sender_active = False
     is_sender_in_blacklist = False
     sender_email = None
     sender_firstname = None
     sender_lastname = None
 
     # A list of fields to be serialized
-    RECEIVED_SERIALIZE_LIST = ['id', 'content', 'deliver_time', 'sender_id','image', 'is_read', 'is_reported', 'is_sender_in_blacklist', 'sender_email', 'sender_firstname', 'sender_lastname']
+    RECEIVED_SERIALIZE_LIST = ['id', 'content', 'deliver_time', 'sender_id', 'image', 'is_read', 'is_reported', 
+                    'is_sender_active', 'is_sender_in_blacklist', 'sender_email', 'sender_firstname', 'sender_lastname']
 
     @staticmethod
     def build_from_json(json: dict):
@@ -83,6 +85,7 @@ class ReceivedMessage(Message):
         
         self.is_read = kw["is_read"]
         self.is_reported = kw["is_reported"]
+        self.is_sender_active = kw["is_sender_active"]
         self.is_sender_in_blacklist = kw["is_sender_in_blacklist"]
         self.sender_email = kw["sender_email"]
         self.sender_firstname = kw["sender_firstname"]

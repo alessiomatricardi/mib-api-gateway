@@ -1,11 +1,14 @@
 import datetime
-from flask import Blueprint, redirect, render_template, flash, request
+from flask import Blueprint, redirect, render_template, flash, request, abort
 from flask_login import login_required, current_user
-from PIL import Image
-from mib.forms.message import MessageForm
+from mib.forms.message import MessageForm, ReportForm, HideForm
 from mib.rao.user_manager import UserManager
 from mib.rao.messages_manager import MessageManager
 from mib.rao.messages import PendingDeliveredMessage, ReceivedMessage, Recipient
+from werkzeug.utils import secure_filename
+import base64
+from io import BytesIO
+from flask.helpers import send_file
 
 messages = Blueprint('messages', __name__)
 
@@ -52,9 +55,10 @@ def _new_message():
             pass
 
         # retrieve users list
-        recipients_list = UserManager.get_users_list(current_user.id)
+        recipients_list, status_code = UserManager.get_users_list(current_user.id)
 
-        # TODO CHECKS SU STA GET
+        if status_code != 200:
+            abort(status_code)
 
         recipient_emails = [(user.email, user.email) for user in recipients_list]
         
@@ -80,16 +84,16 @@ def _new_message():
                 user : Recipient
 
                 for user in message.recipients:
-                    recipients_list = recipients_list + "%s %s (%s)\n", (user.firstname, user.lastname, user.email)
+                    recipients_list = recipients_list + "%s %s (%s)\n" % (user.firstname, user.lastname, user.email)
                 
-                new_message_content = "Sent by me to\n" + recipients_list + "\n\n" + message.content + "\"\n"
+                new_message_content = "Sent by me to\n" + recipients_list + "\n\n" + message.content
             
             else:
                 # label = 'received'
                 message : ReceivedMessage
 
-                new_message_content = "Received by me from %s %s (%s)\n", (message.sender_firstname, message.sender_lastname, message.sender_email)\
-                     + "\n\n" + message.content + "\"\n"
+                new_message_content = "Received from %s %s (%s)\n" % (message.sender_firstname, message.sender_lastname, message.sender_email)\
+                     + "\n\n" + message.content
 
         # if it is a reply message, set the sender as the unique recipient
         elif write_to != '':
@@ -101,6 +105,20 @@ def _new_message():
 
     elif request.method == 'POST':
 
+        if not form.attach_image.validate(form):
+            
+            # retrieve users list
+            recipients_list, status_code = UserManager.get_users_list(current_user.id)
+
+            if status_code != 200:
+                abort(status_code)
+
+            recipient_emails = [(user.email, user.email) for user in recipients_list]
+            
+            form.recipients.choices = recipient_emails
+
+            return render_template('new_message.html', form = form, single_recipient = '')
+        
         form = request.form
 
         # if no recipients have been selected
@@ -110,7 +128,6 @@ def _new_message():
         
         #date validation
         deliver_time = datetime.datetime.strptime(form['deliver_time'], '%Y-%m-%dT%H:%M')
-        print(deliver_time)
         deliver_time = MessageManager.validate_datetime(deliver_time)
 
         # verify that an image has been inserted
@@ -119,13 +136,13 @@ def _new_message():
         if request.files and request.files['attach_image'].filename != '': 
 
             # takes the image
-            file        = request.files['attach_image']
-            file_name   = request.files['attach_image'].filename
+            file = request.files['attach_image']
+            file_name = secure_filename(request.files['attach_image'].filename)
 
             #converts the given file in base64
             imageb64 = MessageManager.convert_image(file)
         
-        MessageManager.send_message(
+        status_code = MessageManager.send_message(
             current_user.id,
             str(deliver_time),
             form['content'],
@@ -135,6 +152,9 @@ def _new_message():
             file_name
         )
 
+        if status_code != 201:
+            abort(status_code)
+
         return render_template("index.html") 
           
     else:
@@ -143,20 +163,93 @@ def _new_message():
 @messages.route('/hide', methods=['POST'])
 @login_required
 def _hide_message():
-    pass
+    
+    form = HideForm()
+
+    if not form.validate_on_submit():
+        return redirect('/')
+
+    message_id = form.message_id.data
+
+    try:
+        message_id = int(message_id)
+    except:
+        abort(404)
+    
+    status_code = MessageManager.hide_message(current_user.id, message_id)
+
+    if status_code != 200:
+        abort(status_code)
+    
+    return redirect('/bottlebox/received')
 
 @messages.route('/report', methods=['POST'])
 @login_required
 def _report_message():
-    pass
+
+    form = ReportForm()
+
+    if not form.validate_on_submit():
+        return redirect('/')
+
+    message_id = form.message_id.data
+
+    try:
+        message_id = int(message_id)
+    except:
+        abort(404)
+    
+    status_code = MessageManager.report_message(current_user.id, message_id)
+
+    if status_code != 200:
+        abort(status_code)
+    
+    return redirect('/messages/received/%s' % str(message_id))
 
 @messages.route('/messages/<label>/<message_id>/attachment', methods=['GET'])
 @login_required
-def _get_attachment():
-    pass
+def _get_attachment(label, message_id):
+    
+    try:
+        message_id = int(message_id)
+    except:
+        abort(404)
+    
+    image_base64, image_filename, status_code = MessageManager.get_attachment(current_user.id, label, message_id)
 
-@messages.route('/messages/<label>/<message_id>/remove', methods=['GET'])
+    if status_code != 200:
+        abort(status_code)
+
+    img_data = BytesIO(base64.b64decode(image_base64))
+
+    format = str(image_filename).capitalize().split(".")[1]
+
+    mimetype = 'image/jpeg'
+
+    if format == 'PNG':
+        mimetype = 'image/png'
+    elif format == 'GIF':
+        mimetype = 'image/gif'
+
+    return send_file(img_data, mimetype=mimetype)
+
+@messages.route('/messages/pending/<message_id>/remove', methods=['GET'])
 @login_required
-def _delete_message():
-    pass
+def _delete_pending_message(message_id):
+    
+    try:
+        message_id = int(message_id)
+    except:
+        abort(404)
+    
+    message, status_code = MessageManager.delete_message(current_user.id, 'pending', message_id)
+
+    if status_code != 200:
+        if status_code == 403 and str(message).count('points') > 0:
+            flash(message)
+            return redirect('/messages/pending/%s' % str(message_id))
+        else:
+            abort(status_code)
+    
+    return redirect('/bottlebox/pending')
 

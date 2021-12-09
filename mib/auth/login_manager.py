@@ -17,7 +17,7 @@ def init_login_manager(app):
         """
 
         try:
-            user = UserManager.get_user_by_id(user_id, user_id)
+            user, status_code = UserManager.get_user_by_id(user_id, user_id)
             user.authenticated = True
             return user
         except:

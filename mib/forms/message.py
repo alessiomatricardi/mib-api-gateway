@@ -43,6 +43,8 @@ class MessageForm(FlaskForm):
         validators=[FileAllowed(MESSAGE_IMAGE_ALLOWED_FORMATS, format_message)]
     )
 
+    display = ['recipients', 'content', 'deliver_time', 'attach_image']
+
 class DraftForm(MessageForm):
     '''
     Form which allow users to modify their draft messages

@@ -41,12 +41,17 @@
 
   {% else %}
 
-  <a href="/messages?write_to={{user.email}}" class="btn btn-lg btn-primary fw-bold">Write a message</a>
-  <br><br>
-  <form action="/block" method="POST">
-    {{ block_form.hidden_tag() }}
-    <input type="submit" class="btn btn-lg btn-danger fw-bold" value="Block this user">
-  </form>
+    {% if user.is_active %}
+  
+      <a href="/messages?write_to={{user.email}}" class="btn btn-lg btn-primary fw-bold">Write a message</a>
+    
+    {% endif %}
+
+    <br><br>
+    <form action="/block" method="POST">
+      {{ block_form.hidden_tag() }}
+      <input type="submit" class="btn btn-lg btn-danger fw-bold" value="Block this user">
+    </form>
 
   {% endif %}
 

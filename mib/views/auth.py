@@ -10,7 +10,6 @@ auth = Blueprint('auth', __name__)
 @auth.route('/login', methods=['GET', 'POST'])
 def _login():
     # if the user is already logged in, redirect him to homepage
-    #TODO usare @login_required per controllare se un utente è loggato
     if current_user is not None and hasattr(current_user, 'id'):
         return redirect('/')
     

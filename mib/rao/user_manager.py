@@ -1,7 +1,6 @@
 import base64
 from mib.auth.user import User
 from mib import app
-from flask_login import logout_user
 
 from flask import abort
 import requests
@@ -12,7 +11,7 @@ class UserManager:
     REQUESTS_TIMEOUT_SECONDS = app.config['REQUESTS_TIMEOUT_SECONDS']
 
     @classmethod
-    def get_user_by_id(cls, user_id: int, requester_id: int) -> User:
+    def get_user_by_id(cls, user_id: int, requester_id: int):
         """
         This method contacts the users microservice
         and retrieves the user object by user id.
@@ -21,28 +20,27 @@ class UserManager:
         """
         try:
             url = "%s/users/%s" % (cls.USERS_ENDPOINT, str(user_id))
-            response = requests.get(url,
-                                        json={
-                                            'requester_id': requester_id,     
-                                        },
-                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
-                                        )
+            response = requests.get(
+                url,
+                json={
+                    'requester_id': requester_id,     
+                },
+                timeout=cls.REQUESTS_TIMEOUT_SECONDS
+            )
 
-            if response.status_code == 200:
-                json_payload = response.json()
-
-                user = User.build_from_json(json_payload['user'])
+            if response.status_code != 200:
+                return None, response.status_code
             
-            else:
-                raise RuntimeError('Server has sent an unrecognized status code %s' % response.status_code)
+            json_payload = response.json()
+
+            user = User.build_from_json(json_payload['user'])
+
+            return user, 200
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        return user
-
-    # TODO QUESTO NON DOVREBBE ESSERE ESPOSTO ALL'UTENTE
-    # AL MASSIMO DENTRO IL GATEWAY
+    
     @classmethod
     def get_user_by_email(cls, user_email: str):
         """
@@ -65,6 +63,7 @@ class UserManager:
 
         return user
 
+
     @classmethod
     def register(cls,
                     email: str, password: str,
@@ -72,23 +71,24 @@ class UserManager:
                     birthdate):
         try:
             url = "%s/register" % cls.USERS_ENDPOINT
-            response = requests.post(url,
-                                     json={
-                                         'email': email,
-                                         'password': password,
-                                         'date_of_birth': birthdate,
-                                         'firstname': firstname,
-                                         'lastname': lastname,
-                                     },
-                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
-                                     )
+            response = requests.post(
+                url,
+                json={
+                    'email': email,
+                    'password': password,
+                    'date_of_birth': birthdate,
+                    'firstname': firstname,
+                    'lastname': lastname,
+                },
+                timeout=cls.REQUESTS_TIMEOUT_SECONDS
+            )
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        return response
+        return response.status_code
 
-    #TODO delte update_user
+    
     @classmethod
     def modify_data(cls, user_id: int, firstname: str, lastname: str, birthdate: str):
         """
@@ -106,12 +106,12 @@ class UserManager:
                                     },
                                     timeout=cls.REQUESTS_TIMEOUT_SECONDS
                                     )
-            return response
+            
+            return response.status_code
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        raise RuntimeError('Error with searching for the user %s' % user_id)
 
     @classmethod
     def modify_password(cls, user_id: int, old_password: str, new_password: str, repeat_new_password: str):
@@ -135,6 +135,7 @@ class UserManager:
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
+
     @classmethod
     def unregister(cls,
                     user_id: int,
@@ -153,7 +154,8 @@ class UserManager:
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        return response
+        return response.status_code
+
 
     @classmethod
     def login_user(cls, email: str, password: str):
@@ -189,6 +191,7 @@ class UserManager:
                 'Microservice users returned an invalid status code %s' % (response.status_code)
             )
 
+
     @classmethod
     def modify_content_filter(cls, user_id: str, enabled: bool):
         try:
@@ -205,6 +208,7 @@ class UserManager:
             return abort(500)
 
         return response
+
 
     @classmethod
     def modify_profile_picture(cls, user_id: str, image: base64):
@@ -223,31 +227,35 @@ class UserManager:
 
         return response
 
+
     @classmethod
     def get_users_list(cls, user_id: str):
         try:
             url = "%s/users" % cls.USERS_ENDPOINT
-            response = requests.get(url,
-                                        json={
-                                            'requester_id': user_id,     
-                                        },
-                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
-                                        )
-            #TODO check how to handle a list of Users 
+            response = requests.get(
+                url,
+                json={
+                    'requester_id': user_id,     
+                },
+                timeout=cls.REQUESTS_TIMEOUT_SECONDS
+            )
 
-            userlist = []
+            users_list = []
 
-            if response.status_code == 200:
-                users_json = response.json()['users']
-                if users_json is not None:
-                    for user_json in users_json:
-                        user = User.build_from_json(user_json)
-                        userlist.append(user)
+            if response.status_code != 200:
+                return None, response.status_code
+
+            users_json = response.json()['users']
+            if users_json is not None:
+                for user_json in users_json:
+                    user = User.build_from_json(user_json)
+                    users_list.append(user)
+            
+            return users_list, 200
 
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return abort(500)
 
-        return userlist
 
     @classmethod
     def get_user_picture(cls, user_id: int):
@@ -272,4 +280,3 @@ class UserManager:
             return abort(500)
        
         return {"image100" : image100, "image" : image}
-

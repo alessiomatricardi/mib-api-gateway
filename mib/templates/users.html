@@ -8,7 +8,7 @@
 
 {% for user in users: %}
 
-  <div class="card mb-3" style="max-width: 540px;">
+  <div class="card mb-3" style="max-width: 640px;">
     <div class="row g-0">
       <div class="col-md-3" style="text-align: center;">
         <img src="/users/{{user.id}}/picture?dim=small" class="img-fluid rounded-circle img-thumbnail" alt="{{user.email}}">
@@ -17,7 +17,7 @@
         <div class="card-body">
           <h5 class="card-title">{{user.firstname}} {{user.lastname}} ({{user.email}})</h5>
           <a href="/users/{{ user.id }}" class="btn btn-success">See profile</a>
-          <a href="/messages/?write_to={{user.email}}" class="btn btn-primary">Write to</a>
+          <a href="/messages?write_to={{user.email}}" class="btn btn-primary">Write to</a>
         </div>
       </div>
     </div>

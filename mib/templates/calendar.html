@@ -27,16 +27,17 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.js"></script>
 <script src="https://rawgit.com/moment/moment/2.2.1/min/moment.min.js"></script>
 <script type="text/javascript">
-    var messages = {{ messages|safe }}
+    var messages = JSON.parse('{{ messages | tojson | safe }}');
 
     var events = []
     for(message of messages){
         console.log(message)
         events.push({
-            title: message[0],
-            start: message[1],
-            backgroundColor: message[2] ? '#00b7ff' : '#ff6000'
-        })
+            title: message.title,
+            start: message.deliver_time,
+            backgroundColor: message.type == 'received' ? '#ff5964' : message.type == 'pending' ? '#f9ba55' : '#38618c',
+            url: '/messages/' + message.type + '/' + message.id
+        }) 
     }
 
     const element = document.getElementById("calendar");
@@ -75,6 +76,14 @@
         dayMaxEvents: true, // allow "more" link when too many events
         navLinks: true,
         events: events,
+
+        defaultTimedEventDuration: '00:00:01',
+        timeZone: 'Europe/Rome',
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
 
     });
 

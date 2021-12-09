@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, request
+from flask import Blueprint, render_template, abort, request, flash
 from flask_login import current_user
 from flask_login.utils import login_required
 from werkzeug.utils import redirect, secure_filename
@@ -99,6 +99,9 @@ def _show_draft_message(message_id):
     message : DraftMessage
     message, status_code = MessageManager.get_message_details(current_user.id, message_id, 'drafts')
 
+    if status_code != 200:
+        abort(status_code)
+
     # defining format of datetime in order to insert it in html form
     deliver_time = message.deliver_time.strftime("%Y-%m-%dT%H:%M")
 
@@ -111,36 +114,72 @@ def _show_draft_message(message_id):
         form.content.data = message.content
 
         # retrieve users
-        #TODO users, status_code = UserManager.get_users_list(current_user.id)
-        users = UserManager.get_users_list(current_user.id)
+        users, status_code = UserManager.get_users_list(current_user.id)
 
-        #if status_code != 200:
-        #    abort(status_code)
+        if status_code != 200:
+            abort(status_code)
 
         form.recipients.choices = [(user.email, user.email) for user in users]
 
         form.delete_image.data = False
 
         # returning the draft html page
-        return render_template("modify_draft.html", form = form, deliver_time = deliver_time, message = message)
+        return render_template("modify_draft.html", form = form, deliver_time = deliver_time, message = message, recipients_emails = message.recipients)
     
     elif request.method == 'POST':
         
-        form = request.form
+        if not form.attach_image.validate(form):
+            
+            # retrieve users list
+            recipients_list, status_code = UserManager.get_users_list(current_user.id)
+
+            if status_code != 200:
+                abort(status_code)
+
+            recipient_emails = [(user.email, user.email) for user in recipients_list]
+            
+            form.recipients.choices = recipient_emails
+
+            form.delete_image.data = False
+
+            # returning the draft html page
+            return render_template("modify_draft.html", form = form, deliver_time = deliver_time, message = message, recipients_emails = message.recipients)
         
+        form = request.form
+
+        # if no recipients have been selected
+        if len(form.getlist('recipients')) == 0: 
+
+            flash("Please select at least 1 recipient")
+
+            redirect_to = '/messages/drafts/%s' % message_id
+
+            return redirect(redirect_to)
+
         # delete draft from db, eventual image in filesystem and all message_recipients instances
         if form['submit'] == 'Delete draft':
 
-            # TODO DELETE DRAFT
+            msg, status_code = MessageManager.delete_message(current_user.id, 'drafts', message_id)
 
-            return redirect('/bottlebox')
+            if status_code != 200:
+                abort(status_code)
+            
+            return redirect('/bottlebox/drafts')
         
         draft_json = dict()
 
         draft_json['requester_id'] = current_user.id
         draft_json['content'] = form['content']
-        draft_json['delete_image'] = form.get('delete_image') or False
-        draft_json['deliver_time'] = datetime.datetime.strptime(form['deliver_time'], '%Y-%m-%dT%H:%M')
+        draft_json['delete_image'] = form.get('delete_image') == 'y' or False
+
+        # date validation
+        deliver_time = form['deliver_time']
+        deliver_time = datetime.datetime.strptime(deliver_time, '%Y-%m-%dT%H:%M')
+        deliver_time = MessageManager.validate_datetime(deliver_time)
+        draft_json['deliver_time'] = str(deliver_time)
+        
+        draft_json['is_sent'] = False
+        draft_json['recipients'] = []
         draft_json['image'] = ''
         draft_json['image_filename'] = ''
         
@@ -151,7 +190,7 @@ def _show_draft_message(message_id):
             file = request.files['attach_image']
 
             # image should be passed as base64 string
-            draft_json['image'] = MessageManager.convert_file(file)
+            draft_json['image'] = MessageManager.convert_image(file)
 
             draft_json['image_filename'] = secure_filename(file.filename)
 
@@ -167,10 +206,13 @@ def _show_draft_message(message_id):
         
         draft_json['recipients'] = recipient_emails
 
-        # TODO RICHIESTA PUT
+        status_code = MessageManager.modify_draft(message_id, draft_json)
+
+        if status_code != 200:
+            abort(status_code)
 
         if form['submit'] == 'Send bottle':
-            redirect_to = '/messages/pending/%s', (message.id)
+            redirect_to = '/messages/pending/%s' % message.id
             return redirect(redirect_to)
         else:
             return redirect('/bottlebox/drafts')

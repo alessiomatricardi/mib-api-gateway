@@ -72,12 +72,12 @@ class MessageManager:
         return message, 200
     
     @classmethod
-    def send_message(cls, user_id:int, deliver_time:str, content:str, recipients:list, is_draft:bool, imageb64:str, file_name:str):
+    def send_message(cls, requester_id : int, deliver_time:str, content:str, recipients:list, is_draft:bool, imageb64:str, file_name:str):
         # gives a message to the MS 
 
         json_data                   = {}
         # take message content
-        json_data['requester_id']   = user_id
+        json_data['requester_id']   = requester_id
         json_data['deliver_time']   = deliver_time
         json_data['content']        = content
         json_data['recipients']     = recipients
@@ -86,16 +86,88 @@ class MessageManager:
         json_data['image_filename'] = file_name
 
 
-        url         = "%s/messages" % cls.MESSAGES_ENDPOINT
-        response    = requests.post( url, #return a list of Message objects
-                                    json    = json_data,
-                                    timeout = cls.REQUESTS_TIMEOUT_SECONDS
-                                    )
+        url = "%s/messages" % cls.MESSAGES_ENDPOINT
+        response = requests.post(
+            url,
+            json = json_data,
+            timeout = cls.REQUESTS_TIMEOUT_SECONDS
+        )
+
+        return response.status_code
+
+    @classmethod
+    def get_attachment(cls, requester_id : int, label : str, message_id : int):
+
+        url = "%s/messages/%s/%s/attachment" % (cls.MESSAGES_ENDPOINT, str(label),str(message_id))
+        response = requests.get(
+            url,
+            json={
+                'requester_id'  : requester_id, 
+            },
+            timeout=cls.REQUESTS_TIMEOUT_SECONDS
+        )
 
         if response.status_code != 200:
-            return None     
+            return None, None, response.status_code
+        
+        response_json = response.json()
 
-        return response.json()
+        image_base64 = response_json['image']
+        image_filename = response_json['image_filename']
+
+        return image_base64, image_filename, 200
+
+    @classmethod
+    def modify_draft(cls, message_id : int, json_data : dict):
+
+        url = "%s/messages/drafts/%s" % (cls.MESSAGES_ENDPOINT, str(message_id))
+        response = requests.put(
+            url,
+            json = json_data,
+            timeout = cls.REQUESTS_TIMEOUT_SECONDS
+        )
+
+        return response.status_code
+
+    @classmethod
+    def delete_message(cls, requester_id : int, label : str, message_id : int):
+
+        url = "%s/messages/%s/%s" % (cls.MESSAGES_ENDPOINT, label, str(message_id))
+        response = requests.delete(
+            url,
+            json = {
+                'requester_id' : requester_id
+            },
+            timeout = cls.REQUESTS_TIMEOUT_SECONDS
+        )
+
+        return response.json()['description'], response.status_code
+
+    @classmethod
+    def report_message(cls, requester_id : int, message_id : int):
+        url = "%s/messages/received/%s/report" % (cls.MESSAGES_ENDPOINT, str(message_id))
+        response = requests.put(
+            url,
+            json = {
+                'requester_id' : requester_id
+            },
+            timeout = cls.REQUESTS_TIMEOUT_SECONDS
+        )
+
+        return response.status_code
+
+    @classmethod
+    def hide_message(cls, requester_id : int, message_id : int):
+        url = "%s/messages/received/%s/hide" % (cls.MESSAGES_ENDPOINT, str(message_id))
+        response = requests.put(
+            url,
+            json = {
+                'requester_id' : requester_id
+            },
+            timeout = cls.REQUESTS_TIMEOUT_SECONDS
+        )
+
+        return response.status_code
 
     @classmethod
     def validate_datetime(cls, deliver_time):
@@ -104,11 +176,10 @@ class MessageManager:
         return deliver_time
     
     @classmethod
-    def convert_file(cls, file):
+    def convert_image(cls, file):
         '''
         Convert a given file in a base64 encoded string
         '''
-        with open(file, mode='rb') as image:
-            img_base64 = base64.encodebytes(image.read()).decode('utf-8')
+        img_base64 = base64.encodebytes(file.stream.read()).decode('utf-8')
 
-            return img_base64
+        return img_base64

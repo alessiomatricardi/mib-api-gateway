@@ -15,17 +15,20 @@ blacklist = Blueprint('blacklist', __name__)
 @login_required
 def _retrieve_blacklist():
 
-    #TODO check error cases
     requester_id = current_user.id
     
     #retrieves the ids of all the users blocked by the requester
-    blocking_ids, blocked_ids = BlacklistManager.retrieving_blacklist(requester_id)
+    blocking_ids, blocked_ids = BlacklistManager.get_blacklist(requester_id)
 
     users = []
     
     #retrieve the user associated to each id in blocked_ids list
     for i in blocked_ids:
-        user = UserManager.get_user_by_id(i, i)
+        user, status_code = UserManager.get_user_by_id(i, i)
+
+        if status_code != 200:
+            abort(status_code)
+
         users.append(user)
 
     return render_template('blacklist.html', blacklist = users)
