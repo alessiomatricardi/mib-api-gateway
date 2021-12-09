@@ -40,7 +40,14 @@ def _login():
             else:
                 # login the user
                 login_user(user)
-                return redirect('/')
+
+                # redirect user to the desired page, if exists
+                redirect_to = request.args.get('next')
+
+                if redirect_to is None:
+                    redirect_to = '/'
+
+                return redirect(redirect_to)
         
     else:
         return render_template('login.html', form=form)
@@ -49,7 +56,6 @@ def _login():
 @auth.route("/logout", methods=['GET'])
 @login_required
 def _logout():
-    # if the user is not logged in, don't logout and directly redirect him to homepage
     
     logout_user()
     
