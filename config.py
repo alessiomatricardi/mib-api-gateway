@@ -12,12 +12,19 @@ class Config(object):
 
     # configuring redis
     REDIS_HOST = os.getenv('REDIS_HOST', 'redis_cache')
-    REDIS_PORT = os.getenv('REDIS_PORT', 6379)
-    REDIS_DB = os.getenv('REDIS_DB', '0')
-    REDIS_URL = 'redis://%s:%s/%s' % (
+    REDIS_PORT_USERS = os.getenv('REDIS_PORT', 6379)
+    REDIS_PORT_MESSAGES = os.getenv('REDIS_PORT', 6378)
+    REDIS_DB_USERS = os.getenv('REDIS_DB_USERS', '0')
+    REDIS_DB_MESSAGES = os.getenv('REDIS_DB_MESSAGES', '0')
+    REDIS_URL_USERS = 'redis://%s:%s/%s' % (
         REDIS_HOST,
-        REDIS_PORT,
-        REDIS_DB
+        REDIS_PORT_USERS,
+        REDIS_DB_USERS
+    )
+    REDIS_URL_MESSAGES = 'redis://%s:%s/%s' % (
+        REDIS_HOST,
+        REDIS_PORT_MESSAGES,
+        REDIS_DB_MESSAGES
     )
 
     # users microservice
