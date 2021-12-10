@@ -14,4 +14,4 @@ un_app = create_app()
 app = ProxyFix(app=un_app, x_for=1, x_port=1, x_proto=1, x_host=1)
 
 if __name__ == '__main__':
-    un_app.run(debug=True) # TODO ELIMINA PRIMA DI CONSEGNA
+    un_app.run()
