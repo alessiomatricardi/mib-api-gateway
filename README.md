@@ -6,7 +6,7 @@ University of Pisa.
 ## Team info
 
 - The *squad id* is **4**
-- The *team leader* is Riccardo Bonini
+- The *team leader* is Davide Fiorini
 
 #### Members
 
