@@ -1,4 +1,5 @@
 import datetime
+from re import split
 from typing import List
 
 class Message():
@@ -21,7 +22,10 @@ class Message():
             raise RuntimeError('You can\'t build the message with none dict')
         self.id = kw["id"]
         self.content = kw["content"]
-        self.deliver_time = datetime.datetime.strptime(kw['deliver_time'], '%Y-%m-%dT%H:%M:%SZ')
+        date_time = kw['deliver_time'].split('T')
+        date = date_time[0].split('-')
+        time = date_time[1].split(':')
+        self.deliver_time = datetime.datetime(int(date[0]), int(date[1]), int(date[2]), int(time[0]), int(time[1]))
         self.sender_id = kw["sender_id"]
         self.image = kw["image"]
 

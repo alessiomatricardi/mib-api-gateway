@@ -172,7 +172,10 @@ class MessageManager:
     @classmethod
     def validate_datetime(cls, deliver_time):
         if deliver_time < datetime.datetime.now(): # check if the datetime is correct
-            return datetime.datetime.now() # if it is set to a past day, it is sent with current datetime 
+            date = datetime.datetime.today()
+            time = datetime.datetime.now()
+            return datetime.datetime(date.year, date.month, date.day, time.hour, time.minute)
+            #return datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%dT%H:%M'), '%Y-%m-%dT%H:%M') # if it is set to a past day, it is sent with current datetime 
         return deliver_time
     
     @classmethod
