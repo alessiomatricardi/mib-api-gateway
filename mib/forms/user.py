@@ -166,9 +166,7 @@ class ModifyPasswordForm(FlaskForm):
     display = ['old_password', 'new_password', 'repeat_new_password']
 
 class ContentFilterForm(FlaskForm):
-    '''
-    TODO COMMENTARE
-    '''
+    # Form to enable or disable the content filter
     filter_enabled = f.BooleanField()
 
 class BlockForm(FlaskForm):

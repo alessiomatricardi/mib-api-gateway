@@ -43,9 +43,8 @@ class MessageManager:
     
     @classmethod
     def get_message_details(cls, requester_id: int, message_id: int, label: str):
-        '''
-        TODO commenta
-        '''
+        
+        # retrieving the message as a <label> one and checking requester rights on it
         url = "%s/messages/%s/%s" % (cls.MESSAGES_ENDPOINT, str(label),str(message_id))
         response = requests.get(
             url,
