@@ -280,3 +280,43 @@ class UserManager:
             return abort(500)
        
         return {"image100" : image100, "image" : image}
+
+    @classmethod
+    def search_users(cls, requester_id: int, firstname: str, lastname: str, email: str):
+        """
+        This method contact the MS microservice to obtain a list of users 
+        filtered according to the paramters.
+
+        """
+        try:
+            url = "%s/users/search" % cls.USERS_ENDPOINT
+            response = requests.get(url,
+                                        json={
+                                            'requester_id': requester_id,
+                                            'firstname': firstname,
+                                            'lastname': lastname,
+                                            'email': email 
+                                        },
+                                        timeout=cls.REQUESTS_TIMEOUT_SECONDS
+                                        )
+            status_code = response.status_code
+
+            if status_code in [400, 404]:
+                return None, status_code
+
+            elif status_code == 200:
+                userlist = []
+
+                json_payload = response.json()['users']
+
+                for i in json_payload:
+                    user = User.build_from_json(i)
+                    userlist.append(user)
+
+                return userlist, status_code
+
+            else:
+                raise RuntimeError('Server has sent an unrecognized status code %s' % response.status_code)
+
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            return abort(500)

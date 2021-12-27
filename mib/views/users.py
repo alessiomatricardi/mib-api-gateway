@@ -369,7 +369,7 @@ def _search_user():
         else:
             # retrieving the list of users that match with the content of the form
            
-            users, status_code = UserManager._search_users(
+            users, status_code = UserManager.search_users(
                current_user.id,
                firstname,
                lastname,
