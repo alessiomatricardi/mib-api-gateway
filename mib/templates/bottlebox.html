@@ -25,14 +25,14 @@
       {% endif %}
     </div>
     <div class="card-header">
-      To: 
-      {% for recipient in message.recipients: %}
-        {% if label in ['Pending', 'Delivered'] %}
-          {{recipient.firstname}} {{recipient.lastname}} ({{recipient.email}}), 
-        {% else %}
-          {{recipient}}, 
-        {% endif %}
-      {% endfor %}
+      To:
+      {% if label in ['Pending', 'Delivered'] %}
+        {% for recipient in message.recipients: %}
+          {{recipient.firstname}} {{recipient.lastname}} ({{recipient.email}}),
+        {% endfor %}
+      {% else %}
+        {{current_user.firstname}} {{current_user.lastname}} ({{current_user.email}})
+      {% endif %} 
     </div>
     <div class="card-body">
       <p class="card-text">{{message.content}}</p>
