@@ -30,6 +30,10 @@
         {% for recipient in message.recipients: %}
           {{recipient.firstname}} {{recipient.lastname}} ({{recipient.email}}),
         {% endfor %}
+      {% elif label == 'Drafts' %}
+        {% for recipient in message.recipients: %}
+          {{recipient}},
+        {% endfor %}
       {% else %}
         {{current_user.firstname}} {{current_user.lastname}} ({{current_user.email}})
       {% endif %} 
